@@ -1,0 +1,21 @@
+name: parp-backend
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: parp-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: parp_db
+      POSTGRES_USER: parp_user
+      POSTGRES_PASSWORD: parp_password
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - parp_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  parp_postgres_data:
