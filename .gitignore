@@ -18,3 +18,5 @@ env/
 
 .DS_Store
 
+# Keep new downloaded patch files outside version control.
+*.patch

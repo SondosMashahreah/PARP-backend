@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from sqlalchemy import text
 
 from app.core.config import settings
@@ -10,12 +11,14 @@ from app.models.user import User  # noqa: F401 - registers the table metadata
 from app.routers.assistant import router as assistant_router
 from app.routers.auth import router as auth_router
 from app.routers.profile import router as profile_router
+from app.routers.education import router as education_router
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     # Development convenience. Replace with Alembic migrations before production rollout.
-    Base.metadata.create_all(bind=engine)
+    # Keep the existing user-table startup behavior. Education tables use the explicit import command.
+    Base.metadata.create_all(bind=engine, tables=[User.__table__])
     yield
 
 
@@ -34,6 +37,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+app.include_router(education_router)
 app.include_router(assistant_router)
 app.include_router(auth_router)
 app.include_router(profile_router)
