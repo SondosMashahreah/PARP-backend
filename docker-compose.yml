@@ -5,17 +5,37 @@ services:
     image: postgres:16
     container_name: parp-postgres
     restart: unless-stopped
-
     environment:
       POSTGRES_DB: parp_db
       POSTGRES_USER: parp_user
       POSTGRES_PASSWORD: parp_password
-
     ports:
       - "5432:5432"
-
     volumes:
       - parp_postgres_data:/var/lib/postgresql/data
 
+  minio:
+    image: minio/minio:latest
+    container_name: parp-minio
+    restart: unless-stopped
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: parp_minio
+      MINIO_ROOT_PASSWORD: replace_with_a_strong_minio_secret
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - parp_minio_data:/data
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: parp-mailpit
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
 volumes:
   parp_postgres_data:
+  parp_minio_data:

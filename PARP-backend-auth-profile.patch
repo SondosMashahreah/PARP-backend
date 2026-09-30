@@ -1,0 +1,795 @@
+diff --git a/.env.example b/.env.example
+--- a/.env.example
++++ b/.env.example
+@@ -1,10 +1,30 @@
+-DATABASE_URL=your_database_url_here
++DATABASE_URL=postgresql+psycopg://parp_user:parp_password@localhost:5432/parp_db
++
++# Generate a long random value locally. Never commit the real value.
++SECRET_KEY=replace_with_a_long_random_secret
+ ALGORITHM=HS256
+ ACCESS_TOKEN_EXPIRE_MINUTES=30
++REFRESH_TOKEN_EXPIRE_DAYS=14
++OTP_EXPIRE_MINUTES=5
++ALLOWED_EMAIL_DOMAIN=meo.edu.ps
++
++# Mailbox/SMTP credentials. Use the provider values for the mailbox that sends OTPs.
++MAIL_HOST=smtp.example.com
++MAIL_PORT=587
++MAIL_USERNAME=your_mailbox_username
++MAIL_PASSWORD=your_mailbox_password
++MAIL_FROM=no-reply@meo.edu.ps
++MAIL_STARTTLS=true
++
++# Local MinIO from docker-compose.
++MINIO_ENDPOINT=localhost:9000
++MINIO_ACCESS_KEY=parp_minio
++MINIO_SECRET_KEY=replace_with_a_strong_minio_secret
++MINIO_BUCKET=parp-profile-images
++MINIO_SECURE=false
+ 
+ # Create this in the OpenAI API platform. Never commit your real key.
+ OPENAI_API_KEY=your_openai_api_key_here
+-
+ OPENAI_MODEL=gpt-5.6-luna
+ 
+ # Vite dev server. Change this to your deployed frontend origin in production.
+diff --git a/app/core/config.py b/app/core/config.py
+--- a/app/core/config.py
++++ b/app/core/config.py
+@@ -10,6 +10,22 @@
+     SECRET_KEY: str
+     ALGORITHM: str = "HS256"
+     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
++    REFRESH_TOKEN_EXPIRE_DAYS: int = 14
++    OTP_EXPIRE_MINUTES: int = 5
++    ALLOWED_EMAIL_DOMAIN: str = "meo.edu.ps"
++
++    MAIL_HOST: str = ""
++    MAIL_PORT: int = 587
++    MAIL_USERNAME: str = ""
++    MAIL_PASSWORD: str = ""
++    MAIL_FROM: str = ""
++    MAIL_STARTTLS: bool = True
++
++    MINIO_ENDPOINT: str = "localhost:9000"
++    MINIO_ACCESS_KEY: str = "parp_minio"
++    MINIO_SECRET_KEY: str = "parp_minio_secret"
++    MINIO_BUCKET: str = "parp-profile-images"
++    MINIO_SECURE: bool = False
+ 
+     OPENAI_API_KEY: str = ""
+     OPENAI_MODEL: str = "gpt-5.6-luna"
+diff --git a/app/core/security.py b/app/core/security.py
+new file mode 100644
+--- /dev/null
++++ b/app/core/security.py
+@@ -0,0 +1,54 @@
++from datetime import datetime, timedelta, timezone
++
++import bcrypt
++from jose import JWTError, jwt
++
++from app.core.config import settings
++
++
++def hash_password(password: str) -> str:
++    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt(rounds=12)).decode("utf-8")
++
++
++def verify_password(password: str, password_hash: str) -> bool:
++    try:
++        return bcrypt.checkpw(password.encode("utf-8"), password_hash.encode("utf-8"))
++    except ValueError:
++        return False
++
++
++def _create_token(user_id: int, token_type: str, expires_delta: timedelta) -> str:
++    now = datetime.now(timezone.utc)
++    payload = {
++        "sub": str(user_id),
++        "type": token_type,
++        "iat": now,
++        "exp": now + expires_delta,
++    }
++    return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
++
++
++def create_access_token(user_id: int) -> str:
++    return _create_token(
++        user_id,
++        "access",
++        timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
++    )
++
++
++def create_refresh_token(user_id: int) -> str:
++    return _create_token(
++        user_id,
++        "refresh",
++        timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
++    )
++
++
++def decode_token(token: str, expected_type: str) -> dict | None:
++    try:
++        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
++    except JWTError:
++        return None
++    if payload.get("type") != expected_type:
++        return None
++    return payload
+diff --git a/app/main.py b/app/main.py
+--- a/app/main.py
++++ b/app/main.py
+@@ -1,16 +1,29 @@
++from contextlib import asynccontextmanager
++
+ from fastapi import FastAPI
+ from fastapi.middleware.cors import CORSMiddleware
+ from sqlalchemy import text
+ 
+ from app.core.config import settings
+-from app.core.database import engine
++from app.core.database import Base, engine
++from app.models.user import User  # noqa: F401 - registers the table metadata
+ from app.routers.assistant import router as assistant_router
++from app.routers.auth import router as auth_router
++from app.routers.profile import router as profile_router
++
++
++@asynccontextmanager
++async def lifespan(_: FastAPI):
++    # Development convenience. Replace with Alembic migrations before production rollout.
++    Base.metadata.create_all(bind=engine)
++    yield
+ 
+ 
+ app = FastAPI(
+     title="PARP API",
+     description="Palestinian Action Research Platform API",
+-    version="1.0.0",
++    version="1.1.0",
++    lifespan=lifespan,
+ )
+ 
+ app.add_middleware(
+@@ -22,28 +35,22 @@
+ )
+ 
+ app.include_router(assistant_router)
++app.include_router(auth_router)
++app.include_router(profile_router)
+ 
+ 
+ @app.get("/")
+ def root():
+-    return {
+-        "message": "PARP API is running"
+-    }
++    return {"message": "PARP API is running"}
+ 
+ 
+ @app.get("/health")
+ def health_check():
+-    return {
+-        "status": "ok"
+-    }
++    return {"status": "ok"}
+ 
+ 
+ @app.get("/database-health")
+ def database_health():
+     with engine.connect() as connection:
+         result = connection.execute(text("SELECT 1"))
+-
+-        return {
+-            "database": "connected",
+-            "result": result.scalar(),
+-        }
++        return {"database": "connected", "result": result.scalar()}
+diff --git a/app/models/user.py b/app/models/user.py
+new file mode 100644
+--- /dev/null
++++ b/app/models/user.py
+@@ -0,0 +1,27 @@
++from datetime import datetime, timezone
++
++from sqlalchemy import Boolean, DateTime, Integer, String
++from sqlalchemy.orm import Mapped, mapped_column
++
++from app.core.database import Base
++
++
++class User(Base):
++    __tablename__ = "users"
++
++    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
++    full_name: Mapped[str] = mapped_column(String(150), nullable=False)
++    email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
++    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
++    role: Mapped[str] = mapped_column(String(50), nullable=False, default="user")
++    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
++    is_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
++    otp_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
++    otp_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
++    otp_attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
++    avatar_object_name: Mapped[str | None] = mapped_column(String(500), nullable=True)
++    created_at: Mapped[datetime] = mapped_column(
++        DateTime(timezone=True),
++        nullable=False,
++        default=lambda: datetime.now(timezone.utc),
++    )
+diff --git a/app/routers/auth.py b/app/routers/auth.py
+new file mode 100644
+--- /dev/null
++++ b/app/routers/auth.py
+@@ -0,0 +1,74 @@
++from fastapi import APIRouter, Depends, HTTPException
++from sqlalchemy.orm import Session
++
++from app.core.database import get_db
++from app.core.security import create_access_token, create_refresh_token, decode_token
++from app.models.user import User
++from app.routers.dependencies import get_current_user
++from app.schemas.auth import (
++    LoginRequest,
++    OtpRequest,
++    RefreshRequest,
++    RegisterRequest,
++    ResendOtpRequest,
++    TokenResponse,
++    UserResponse,
++)
++from app.services.auth import (
++    authenticate,
++    issue_otp,
++    register_user,
++    token_response,
++    user_response,
++    verify_user_email,
++)
++
++
++router = APIRouter(prefix="/auth", tags=["Auth"])
++
++
++@router.post("/register", status_code=202)
++def register(data: RegisterRequest, db: Session = Depends(get_db)):
++    register_user(db, data.full_name, str(data.email), data.password)
++    return {"message": "Verification code sent"}
++
++
++@router.post("/verify-otp", response_model=TokenResponse)
++def verify_email(data: OtpRequest, db: Session = Depends(get_db)):
++    user = verify_user_email(db, str(data.email), data.otp)
++    return token_response(user)
++
++
++@router.post("/resend-otp", status_code=202)
++def resend_otp(data: ResendOtpRequest, db: Session = Depends(get_db)):
++    user = db.query(User).filter(User.email == str(data.email)).first()
++    if not user or user.is_verified:
++        # Avoid leaking account state.
++        return {"message": "If the account is pending, a new code was sent"}
++    issue_otp(db, user)
++    return {"message": "If the account is pending, a new code was sent"}
++
++
++@router.post("/login", response_model=TokenResponse)
++def login(data: LoginRequest, db: Session = Depends(get_db)):
++    return token_response(authenticate(db, str(data.email), data.password))
++
++
++@router.post("/refresh", response_model=TokenResponse)
++def refresh(data: RefreshRequest, db: Session = Depends(get_db)):
++    payload = decode_token(data.refresh_token, "refresh")
++    if not payload or not str(payload.get("sub", "")).isdigit():
++        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
++    user = db.query(User).filter(User.id == int(payload["sub"])).first()
++    if not user or not user.is_active or not user.is_verified:
++        raise HTTPException(status_code=401, detail="Invalid account")
++    return {
++        "access_token": create_access_token(user.id),
++        "refresh_token": create_refresh_token(user.id),
++        "token_type": "bearer",
++    }
++
++
++@router.get("/me", response_model=UserResponse)
++def me(current_user: User = Depends(get_current_user)):
++    return user_response(current_user)
+diff --git a/app/routers/dependencies.py b/app/routers/dependencies.py
+new file mode 100644
+--- /dev/null
++++ b/app/routers/dependencies.py
+@@ -0,0 +1,27 @@
++from fastapi import Depends, HTTPException
++from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
++from sqlalchemy.orm import Session
++
++from app.core.database import get_db
++from app.core.security import decode_token
++from app.models.user import User
++
++
++security = HTTPBearer(auto_error=False)
++
++
++def get_current_user(
++    credentials: HTTPAuthorizationCredentials | None = Depends(security),
++    db: Session = Depends(get_db),
++) -> User:
++    if not credentials:
++        raise HTTPException(status_code=401, detail="Authentication required")
++
++    payload = decode_token(credentials.credentials, "access")
++    if not payload or not str(payload.get("sub", "")).isdigit():
++        raise HTTPException(status_code=401, detail="Invalid or expired token")
++
++    user = db.query(User).filter(User.id == int(payload["sub"])).first()
++    if not user or not user.is_active or not user.is_verified:
++        raise HTTPException(status_code=401, detail="Invalid account")
++    return user
+diff --git a/app/routers/profile.py b/app/routers/profile.py
+new file mode 100644
+--- /dev/null
++++ b/app/routers/profile.py
+@@ -0,0 +1,73 @@
++from pathlib import Path
++
++from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
++from sqlalchemy.orm import Session
++
++from app.core.database import get_db
++from app.models.user import User
++from app.routers.dependencies import get_current_user
++from app.schemas.auth import UserResponse
++from app.schemas.profile import ProfileUpdateRequest
++from app.services.auth import user_response
++from app.services.minio_storage import delete_object, upload_avatar
++
++
++router = APIRouter(prefix="/profile", tags=["Profile"])
++MAX_AVATAR_BYTES = 5 * 1024 * 1024
++ALLOWED_TYPES = {
++    "image/jpeg": "jpg",
++    "image/png": "png",
++    "image/webp": "webp",
++}
++
++
++@router.patch("/me", response_model=UserResponse)
++def update_profile(
++    data: ProfileUpdateRequest,
++    current_user: User = Depends(get_current_user),
++    db: Session = Depends(get_db),
++):
++    current_user.full_name = " ".join(data.full_name.split())
++    db.commit()
++    db.refresh(current_user)
++    return user_response(current_user)
++
++
++@router.post("/avatar", response_model=UserResponse)
++async def update_avatar(
++    file: UploadFile = File(...),
++    current_user: User = Depends(get_current_user),
++    db: Session = Depends(get_db),
++):
++    extension = ALLOWED_TYPES.get(file.content_type or "")
++    if not extension:
++        raise HTTPException(status_code=400, detail="Only JPG, PNG and WEBP images are allowed")
++
++    data = await file.read(MAX_AVATAR_BYTES + 1)
++    if len(data) > MAX_AVATAR_BYTES:
++        raise HTTPException(status_code=413, detail="Profile image must be 5 MB or smaller")
++
++    old_object = current_user.avatar_object_name
++    current_user.avatar_object_name = upload_avatar(
++        current_user.id,
++        data,
++        file.content_type or "application/octet-stream",
++        extension,
++    )
++    db.commit()
++    db.refresh(current_user)
++    delete_object(old_object)
++    return user_response(current_user)
++
++
++@router.delete("/avatar", response_model=UserResponse)
++def remove_avatar(
++    current_user: User = Depends(get_current_user),
++    db: Session = Depends(get_db),
++):
++    old_object = current_user.avatar_object_name
++    current_user.avatar_object_name = None
++    db.commit()
++    db.refresh(current_user)
++    delete_object(old_object)
++    return user_response(current_user)
+diff --git a/app/schemas/auth.py b/app/schemas/auth.py
+new file mode 100644
+--- /dev/null
++++ b/app/schemas/auth.py
+@@ -0,0 +1,90 @@
++import re
++
++from pydantic import BaseModel, EmailStr, Field, field_validator
++
++from app.core.config import settings
++
++
++PASSWORD_RE = re.compile(r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{10,72}$")
++
++
++def normalize_allowed_email(value: str) -> str:
++    email = value.strip().lower()
++    domain = email.rsplit("@", 1)[-1] if "@" in email else ""
++    if domain != settings.ALLOWED_EMAIL_DOMAIN.lower():
++        raise ValueError(f"Email must end with @{settings.ALLOWED_EMAIL_DOMAIN}")
++    return email
++
++
++class RegisterRequest(BaseModel):
++    full_name: str = Field(min_length=2, max_length=150)
++    email: EmailStr
++    password: str = Field(min_length=10, max_length=72)
++
++    @field_validator("full_name")
++    @classmethod
++    def clean_name(cls, value: str) -> str:
++        return " ".join(value.split())
++
++    @field_validator("email")
++    @classmethod
++    def allowed_domain(cls, value: EmailStr) -> str:
++        return normalize_allowed_email(str(value))
++
++    @field_validator("password")
++    @classmethod
++    def strong_password(cls, value: str) -> str:
++        if not PASSWORD_RE.fullmatch(value):
++            raise ValueError(
++                "Password must contain uppercase, lowercase, number, symbol, and be at least 10 characters"
++            )
++        return value
++
++
++class LoginRequest(BaseModel):
++    email: EmailStr
++    password: str = Field(min_length=1, max_length=72)
++
++    @field_validator("email")
++    @classmethod
++    def allowed_domain(cls, value: EmailStr) -> str:
++        return normalize_allowed_email(str(value))
++
++
++class OtpRequest(BaseModel):
++    email: EmailStr
++    otp: str = Field(pattern=r"^\d{6}$")
++
++    @field_validator("email")
++    @classmethod
++    def allowed_domain(cls, value: EmailStr) -> str:
++        return normalize_allowed_email(str(value))
++
++
++class ResendOtpRequest(BaseModel):
++    email: EmailStr
++
++    @field_validator("email")
++    @classmethod
++    def allowed_domain(cls, value: EmailStr) -> str:
++        return normalize_allowed_email(str(value))
++
++
++class RefreshRequest(BaseModel):
++    refresh_token: str
++
++
++class UserResponse(BaseModel):
++    id: int
++    full_name: str
++    email: EmailStr
++    role: str
++    is_verified: bool
++    avatar_url: str | None = None
++
++
++class TokenResponse(BaseModel):
++    access_token: str
++    refresh_token: str
++    token_type: str = "bearer"
++    user: UserResponse | None = None
+diff --git a/app/schemas/profile.py b/app/schemas/profile.py
+new file mode 100644
+--- /dev/null
++++ b/app/schemas/profile.py
+@@ -0,0 +1,5 @@
++from pydantic import BaseModel, Field
++
++
++class ProfileUpdateRequest(BaseModel):
++    full_name: str = Field(min_length=2, max_length=150)
+diff --git a/app/services/auth.py b/app/services/auth.py
+new file mode 100644
+--- /dev/null
++++ b/app/services/auth.py
+@@ -0,0 +1,108 @@
++from datetime import datetime, timezone
++
++from fastapi import HTTPException
++from sqlalchemy.orm import Session
++
++from app.core.security import (
++    create_access_token,
++    create_refresh_token,
++    hash_password,
++    verify_password,
++)
++from app.models.user import User
++from app.services.email import send_otp_email
++from app.services.otp import generate_otp, hash_otp, otp_expiry, verify_otp
++from app.services.minio_storage import presigned_avatar_url
++
++
++def user_response(user: User) -> dict:
++    return {
++        "id": user.id,
++        "full_name": user.full_name,
++        "email": user.email,
++        "role": user.role,
++        "is_verified": user.is_verified,
++        "avatar_url": presigned_avatar_url(user.avatar_object_name),
++    }
++
++
++def token_response(user: User) -> dict:
++    return {
++        "access_token": create_access_token(user.id),
++        "refresh_token": create_refresh_token(user.id),
++        "token_type": "bearer",
++        "user": user_response(user),
++    }
++
++
++def issue_otp(db: Session, user: User) -> None:
++    otp = generate_otp()
++    user.otp_hash = hash_otp(otp)
++    user.otp_expires_at = otp_expiry()
++    user.otp_attempts = 0
++    db.commit()
++    try:
++        send_otp_email(user.email, otp)
++    except Exception:
++        db.rollback()
++        raise HTTPException(status_code=503, detail="Could not send verification email")
++
++
++def register_user(db: Session, full_name: str, email: str, password: str) -> User:
++    user = db.query(User).filter(User.email == email).first()
++    if user and user.is_verified:
++        raise HTTPException(status_code=409, detail="Email already registered")
++
++    if user:
++        user.full_name = full_name
++        user.password_hash = hash_password(password)
++        user.is_active = True
++    else:
++        user = User(
++            full_name=full_name,
++            email=email,
++            password_hash=hash_password(password),
++        )
++        db.add(user)
++        db.flush()
++
++    issue_otp(db, user)
++    db.refresh(user)
++    return user
++
++
++def verify_user_email(db: Session, email: str, otp: str) -> User:
++    user = db.query(User).filter(User.email == email).first()
++    now = datetime.now(timezone.utc)
++
++    if not user or user.is_verified or not user.otp_hash or not user.otp_expires_at:
++        raise HTTPException(status_code=400, detail="Invalid or expired verification code")
++
++    expires_at = user.otp_expires_at
++    if expires_at.tzinfo is None:
++        expires_at = expires_at.replace(tzinfo=timezone.utc)
++
++    if expires_at < now or user.otp_attempts >= 5:
++        raise HTTPException(status_code=400, detail="Invalid or expired verification code")
++
++    if not verify_otp(otp, user.otp_hash):
++        user.otp_attempts += 1
++        db.commit()
++        raise HTTPException(status_code=400, detail="Invalid or expired verification code")
++
++    user.is_verified = True
++    user.otp_hash = None
++    user.otp_expires_at = None
++    user.otp_attempts = 0
++    db.commit()
++    db.refresh(user)
++    return user
++
++
++def authenticate(db: Session, email: str, password: str) -> User:
++    user = db.query(User).filter(User.email == email).first()
++    if not user or not user.is_active or not user.is_verified:
++        raise HTTPException(status_code=401, detail="Invalid email or password")
++    if not verify_password(password, user.password_hash):
++        raise HTTPException(status_code=401, detail="Invalid email or password")
++    return user
+diff --git a/app/services/email.py b/app/services/email.py
+new file mode 100644
+--- /dev/null
++++ b/app/services/email.py
+@@ -0,0 +1,25 @@
++import smtplib
++from email.message import EmailMessage
++
++from app.core.config import settings
++
++
++def send_otp_email(to_email: str, otp: str) -> None:
++    if not settings.MAIL_HOST or not settings.MAIL_FROM:
++        raise RuntimeError("Mailbox SMTP is not configured")
++
++    message = EmailMessage()
++    message["Subject"] = "PARP verification code"
++    message["From"] = settings.MAIL_FROM
++    message["To"] = to_email
++    message.set_content(
++        f"Your PARP verification code is {otp}. "
++        f"It expires in {settings.OTP_EXPIRE_MINUTES} minutes."
++    )
++
++    with smtplib.SMTP(settings.MAIL_HOST, settings.MAIL_PORT, timeout=20) as smtp:
++        if settings.MAIL_STARTTLS:
++            smtp.starttls()
++        if settings.MAIL_USERNAME:
++            smtp.login(settings.MAIL_USERNAME, settings.MAIL_PASSWORD)
++        smtp.send_message(message)
+diff --git a/app/services/minio_storage.py b/app/services/minio_storage.py
+new file mode 100644
+--- /dev/null
++++ b/app/services/minio_storage.py
+@@ -0,0 +1,53 @@
++from datetime import timedelta
++from io import BytesIO
++from uuid import uuid4
++
++from minio import Minio
++
++from app.core.config import settings
++
++
++_client = Minio(
++    settings.MINIO_ENDPOINT,
++    access_key=settings.MINIO_ACCESS_KEY,
++    secret_key=settings.MINIO_SECRET_KEY,
++    secure=settings.MINIO_SECURE,
++)
++
++
++def ensure_bucket() -> None:
++    if not _client.bucket_exists(settings.MINIO_BUCKET):
++        _client.make_bucket(settings.MINIO_BUCKET)
++
++
++def upload_avatar(user_id: int, data: bytes, content_type: str, extension: str) -> str:
++    ensure_bucket()
++    object_name = f"users/{user_id}/avatar-{uuid4().hex}.{extension}"
++    _client.put_object(
++        settings.MINIO_BUCKET,
++        object_name,
++        BytesIO(data),
++        length=len(data),
++        content_type=content_type,
++    )
++    return object_name
++
++
++def delete_object(object_name: str | None) -> None:
++    if not object_name:
++        return
++    try:
++        _client.remove_object(settings.MINIO_BUCKET, object_name)
++    except Exception:
++        # Replacing a profile photo should not fail only because the previous object is gone.
++        pass
++
++
++def presigned_avatar_url(object_name: str | None) -> str | None:
++    if not object_name:
++        return None
++    return _client.presigned_get_object(
++        settings.MINIO_BUCKET,
++        object_name,
++        expires=timedelta(hours=1),
++    )
+diff --git a/app/services/otp.py b/app/services/otp.py
+new file mode 100644
+--- /dev/null
++++ b/app/services/otp.py
+@@ -0,0 +1,26 @@
++import hashlib
++import hmac
++import secrets
++from datetime import datetime, timedelta, timezone
++
++from app.core.config import settings
++
++
++def generate_otp() -> str:
++    return f"{secrets.randbelow(1_000_000):06d}"
++
++
++def hash_otp(otp: str) -> str:
++    return hmac.new(
++        settings.SECRET_KEY.encode("utf-8"),
++        otp.encode("utf-8"),
++        hashlib.sha256,
++    ).hexdigest()
++
++
++def verify_otp(otp: str, otp_hash: str) -> bool:
++    return hmac.compare_digest(hash_otp(otp), otp_hash)
++
++
++def otp_expiry() -> datetime:
++    return datetime.now(timezone.utc) + timedelta(minutes=settings.OTP_EXPIRE_MINUTES)
+diff --git a/docker-compose.yml b/docker-compose.yml
+--- a/docker-compose.yml
++++ b/docker-compose.yml
+@@ -5,17 +5,29 @@
+     image: postgres:16
+     container_name: parp-postgres
+     restart: unless-stopped
+-
+     environment:
+       POSTGRES_DB: parp_db
+       POSTGRES_USER: parp_user
+       POSTGRES_PASSWORD: parp_password
+-
+     ports:
+       - "5432:5432"
+-
+     volumes:
+       - parp_postgres_data:/var/lib/postgresql/data
+ 
++  minio:
++    image: minio/minio:latest
++    container_name: parp-minio
++    restart: unless-stopped
++    command: server /data --console-address ":9001"
++    environment:
++      MINIO_ROOT_USER: parp_minio
++      MINIO_ROOT_PASSWORD: replace_with_a_strong_minio_secret
++    ports:
++      - "9000:9000"
++      - "9001:9001"
++    volumes:
++      - parp_minio_data:/data
++
+ volumes:
+   parp_postgres_data:
++  parp_minio_data:
+diff --git a/requirements.txt b/requirements.txt
+--- a/requirements.txt
++++ b/requirements.txt
+@@ -15,6 +15,7 @@
+ idna==3.20
+ Mako==1.4.3
+ MarkupSafe==3.0.3
++minio>=7.2,<8
+ passlib==1.7.4
+ psycopg==3.3.6
+ psycopg-binary==3.3.6
