@@ -1,4 +1,4 @@
-from openai import OpenAI
+from app.infrastructure.ai import generate_answer
 
 from app.core.config import settings
 
@@ -59,13 +59,4 @@ def ask_parp_assistant(message: str) -> str:
     if not settings.OPENAI_API_KEY:
         raise RuntimeError("OPENAI_API_KEY is not configured")
 
-    client = OpenAI(api_key=settings.OPENAI_API_KEY)
-
-    response = client.responses.create(
-        model=settings.OPENAI_MODEL,
-        instructions=PARP_SYSTEM_PROMPT,
-        input=f"PARP PLATFORM CONTEXT:\n{PARP_CONTEXT}\n\nUSER MESSAGE:\n{message}",
-    )
-
-    answer = response.output_text.strip()
-    return answer or "تعذر إنشاء إجابة حاليًا."
+    return generate_answer(PARP_SYSTEM_PROMPT, f"PARP PLATFORM CONTEXT:\n{PARP_CONTEXT}\n\nUSER MESSAGE:\n{message}")

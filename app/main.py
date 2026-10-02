@@ -1,6 +1,8 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from app.domain.errors import ApplicationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from sqlalchemy import text
@@ -60,3 +62,8 @@ def database_health():
     with engine.connect() as connection:
         result = connection.execute(text("SELECT 1"))
         return {"database": "connected", "result": result.scalar()}
+
+
+@app.exception_handler(ApplicationError)
+async def application_error_handler(request: Request, error: ApplicationError):
+    return JSONResponse(status_code=error.status_code, content={"detail": error.detail})
