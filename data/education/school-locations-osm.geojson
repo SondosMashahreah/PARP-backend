@@ -1,0 +1,427 @@
+{
+  "type": "FeatureCollection",
+  "license": "ODbL 1.0",
+  "license_url": "https://opendatacommons.org/licenses/odbl/1-0/",
+  "attribution": "© OpenStreetMap contributors; Humanitarian OpenStreetMap Team",
+  "snapshot_date": "2026-09-06",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "school-835c938e35c8994446fd",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          34.3411212,
+          31.3760364
+        ]
+      },
+      "properties": {
+        "id": "school-835c938e35c8994446fd",
+        "name_ar": "القرارة الأساسية للبنين",
+        "name_en": "ALQARAR HIGH M",
+        "source_record_id": "node/6807452286",
+        "match_method": "unique_exact_name_and_governorate",
+        "geometry_method": "source_point"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "school-4335e1106bf25612adda",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          34.507603,
+          31.536377
+        ]
+      },
+      "properties": {
+        "id": "school-4335e1106bf25612adda",
+        "name_ar": "حلب الإبتدائية المشتركة \"ب\"",
+        "name_en": "RJLFN",
+        "source_record_id": "node/4739580222",
+        "match_method": "unique_exact_name_and_governorate",
+        "geometry_method": "source_point"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "school-ec670d221c391cbc83cf",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          34.5083586,
+          31.5365798
+        ]
+      },
+      "properties": {
+        "id": "school-ec670d221c391cbc83cf",
+        "name_ar": "الكويت الثانوية للبنات",
+        "name_en": "RJLFN",
+        "source_record_id": "node/4679384289",
+        "match_method": "unique_exact_name_and_governorate",
+        "geometry_method": "source_point"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "school-7fc52c04111c4c707efb",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          34.473742,
+          31.5341092
+        ]
+      },
+      "properties": {
+        "id": "school-7fc52c04111c4c707efb",
+        "name_ar": "عباد الرحمن",
+        "name_en": "EARP",
+        "source_record_id": "way/297060348",
+        "match_method": "unique_exact_name_and_governorate",
+        "geometry_method": "point_inside_mapped_school_footprint"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "school-963c2e9f59c09f7ace8e",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          34.365918587692676,
+          31.4154278
+        ]
+      },
+      "properties": {
+        "id": "school-963c2e9f59c09f7ace8e",
+        "name_ar": "سكينة بنت الحسين الثانوية للبنات",
+        "name_en": "FU-H-B",
+        "source_record_id": "way/41306675",
+        "match_method": "unique_exact_name_and_governorate",
+        "geometry_method": "point_inside_mapped_school_footprint"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "school-1982c0dbad769da4a240",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          34.363531,
+          31.4269667
+        ]
+      },
+      "properties": {
+        "id": "school-1982c0dbad769da4a240",
+        "name_ar": "ابن رشد الأساسية المشتركة",
+        "name_en": "AM-L-B-B",
+        "source_record_id": "node/9533137017",
+        "match_method": "unique_exact_name_and_governorate",
+        "geometry_method": "source_point"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "school-b2680da5f79af57acdb9",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          34.3860624,
+          31.4424769
+        ]
+      },
+      "properties": {
+        "id": "school-b2680da5f79af57acdb9",
+        "name_ar": "ذكور النصيرات الإعدادية \" د",
+        "name_en": "NU-E-B-A",
+        "source_record_id": "node/10295647810",
+        "match_method": "unique_exact_name_and_governorate",
+        "geometry_method": "source_point"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "school-73ada335d876a6f3c4e4",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          34.38825958298144,
+          31.44080485
+        ]
+      },
+      "properties": {
+        "id": "school-73ada335d876a6f3c4e4",
+        "name_ar": "خالد بن الوليد الثانوية للبنين",
+        "name_en": "MIDDLE AREA",
+        "source_record_id": "way/41305740",
+        "match_method": "unique_exact_name_and_governorate",
+        "geometry_method": "point_inside_mapped_school_footprint"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "school-e3f66826bccc6ebd5420",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          34.40084683418631,
+          31.450975
+        ]
+      },
+      "properties": {
+        "id": "school-e3f66826bccc6ebd5420",
+        "name_ar": "أم المؤمنين خديجة الشرعية للبنات",
+        "name_en": "NU-P-G-A",
+        "source_record_id": "way/41306352",
+        "match_method": "unique_exact_name_and_governorate",
+        "geometry_method": "point_inside_mapped_school_footprint"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "school-8c29c9419743a81371ae",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          34.45706826113019,
+          31.51888525
+        ]
+      },
+      "properties": {
+        "id": "school-8c29c9419743a81371ae",
+        "name_ar": "كلية غزة",
+        "name_en": "GAZA COLLEGE",
+        "source_record_id": "way/41254680",
+        "match_method": "unique_exact_name_and_governorate",
+        "geometry_method": "point_inside_mapped_school_footprint"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "school-758ac28166593a4bb73d",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          34.45239307490072,
+          31.52413595
+        ]
+      },
+      "properties": {
+        "id": "school-758ac28166593a4bb73d",
+        "name_ar": "العائلة المقدسة",
+        "name_en": "ALMUQADSH FAMILY",
+        "source_record_id": "way/41254109",
+        "match_method": "unique_exact_name_and_governorate",
+        "geometry_method": "point_inside_mapped_school_footprint"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "school-885b20debda6a3c5a872",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          34.440995,
+          31.5204273
+        ]
+      },
+      "properties": {
+        "id": "school-885b20debda6a3c5a872",
+        "name_ar": "المتميزون",
+        "name_en": "ALMASHAEL",
+        "source_record_id": "node/4385214091",
+        "match_method": "unique_exact_name_and_governorate",
+        "geometry_method": "source_point"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "school-17c04b121aef6757bbe7",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          34.431082161090956,
+          31.503446699999998
+        ]
+      },
+      "properties": {
+        "id": "school-17c04b121aef6757bbe7",
+        "name_ar": "بلقيس اليمن الثانوية للبنات",
+        "name_en": "ALWARDEYH",
+        "source_record_id": "way/41257155",
+        "match_method": "unique_exact_name_and_governorate",
+        "geometry_method": "point_inside_mapped_school_footprint"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "school-ad6eb81671193db4b351",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          34.43134880330612,
+          31.5037942
+        ]
+      },
+      "properties": {
+        "id": "school-ad6eb81671193db4b351",
+        "name_ar": "الوحدة الخاصة ",
+        "name_en": "OM ELQORA GIRLS",
+        "source_record_id": "way/41254031",
+        "match_method": "unique_exact_name_and_governorate",
+        "geometry_method": "point_inside_mapped_school_footprint"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "school-c3eea32fa97b7a45ce2c",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          34.44016628453474,
+          31.510335650000002
+        ]
+      },
+      "properties": {
+        "id": "school-c3eea32fa97b7a45ce2c",
+        "name_ar": "الجليل الثانوية للبنات",
+        "name_en": "TAL ELZHOUR",
+        "source_record_id": "way/41254231",
+        "match_method": "unique_exact_name_and_governorate",
+        "geometry_method": "point_inside_mapped_school_footprint"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "school-5b886fd5a65c03b1dbf2",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          34.45073115821327,
+          31.51885205
+        ]
+      },
+      "properties": {
+        "id": "school-5b886fd5a65c03b1dbf2",
+        "name_ar": "بشير الريس الثانوية للبنات",
+        "name_en": "BASHEER ELRIES SE",
+        "source_record_id": "way/41256013",
+        "match_method": "unique_exact_name_and_governorate",
+        "geometry_method": "point_inside_mapped_school_footprint"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "school-2b3099939aca350a1c91",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          34.461118956802814,
+          31.532396900000002
+        ]
+      },
+      "properties": {
+        "id": "school-2b3099939aca350a1c91",
+        "name_ar": "زهرة المدائن الثانوية للبنات",
+        "name_en": "RAMEZ FAKHRH SEC.",
+        "source_record_id": "way/1010191036",
+        "match_method": "unique_exact_name_and_governorate",
+        "geometry_method": "point_inside_mapped_school_footprint"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "school-73a08f9c084b0550ef2f",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          34.46627244691825,
+          31.5047362
+        ]
+      },
+      "properties": {
+        "id": "school-73a08f9c084b0550ef2f",
+        "name_ar": "الزهراء الثانوية للبنات",
+        "name_en": "ALZAHRA SEC.F B",
+        "source_record_id": "way/41255247",
+        "match_method": "unique_exact_name_and_governorate",
+        "geometry_method": "point_inside_mapped_school_footprint"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "school-4ce7fc9fce0f0a726a93",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          34.4643247,
+          31.5187199
+        ]
+      },
+      "properties": {
+        "id": "school-4ce7fc9fce0f0a726a93",
+        "name_ar": "التابعين الشرعية",
+        "name_en": "ALJERJAWI LOW A",
+        "source_record_id": "node/4112001089",
+        "match_method": "unique_exact_name_and_governorate",
+        "geometry_method": "source_point"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "school-b434c0330931c2815593",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          34.4681384,
+          31.5096419
+        ]
+      },
+      "properties": {
+        "id": "school-b434c0330931c2815593",
+        "name_ar": "عبد الفتاح حمود الأساسية للبنين",
+        "name_en": "ABD ALFTAH HMOUD",
+        "source_record_id": "node/9863444317",
+        "match_method": "unique_exact_name_and_governorate",
+        "geometry_method": "source_point"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "school-7a7d610854bc0e94cf9a",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          34.47717591282658,
+          31.50608115
+        ]
+      },
+      "properties": {
+        "id": "school-7a7d610854bc0e94cf9a",
+        "name_ar": "الكرامة الأساسية المشتركة",
+        "name_en": "ALKARAMH LOW F A",
+        "source_record_id": "way/1229833064",
+        "match_method": "unique_exact_name_and_governorate",
+        "geometry_method": "point_inside_mapped_school_footprint"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "school-3943d44961d8f3ad2c71",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          34.33797579026282,
+          31.4241025
+        ]
+      },
+      "properties": {
+        "id": "school-3943d44961d8f3ad2c71",
+        "name_ar": "ذكور دير البلح الإعدادية \"ب\"",
+        "name_en": "D/Balah Prep. Boys BD/Balah Elem. Boys \"B\"",
+        "source_record_id": "way/303385344",
+        "match_method": "unique_exact_name_and_governorate",
+        "geometry_method": "point_inside_mapped_school_footprint"
+      }
+    }
+  ]
+}

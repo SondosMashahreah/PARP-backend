@@ -1,0 +1,192 @@
+{
+  "prepared_on": "2026-10-01",
+  "total": 3094,
+  "located": 2381,
+  "unresolved": 713,
+  "by_source": {
+    "hdx-wb-2015": 2359,
+    "hotosm-2026-09-06": 22
+  },
+  "by_region": {
+    "PS01": 2359,
+    "PS02": 22
+  },
+  "coverage": [
+    {
+      "id": "PS0101",
+      "name_ar": "جنين",
+      "name_en": "Jenin",
+      "total": 285,
+      "located": 285,
+      "unresolved": 0
+    },
+    {
+      "id": "PS0105",
+      "name_ar": "طوباس",
+      "name_en": "Tubas",
+      "total": 50,
+      "located": 50,
+      "unresolved": 0
+    },
+    {
+      "id": "PS0110",
+      "name_ar": "طولكرم",
+      "name_en": "Tulkarm",
+      "total": 154,
+      "located": 154,
+      "unresolved": 0
+    },
+    {
+      "id": "PS0115",
+      "name_ar": "نابلس",
+      "name_en": "Nablus",
+      "total": 323,
+      "located": 323,
+      "unresolved": 0
+    },
+    {
+      "id": "PS0120",
+      "name_ar": "قلقيلية",
+      "name_en": "Qalqilya",
+      "total": 96,
+      "located": 96,
+      "unresolved": 0
+    },
+    {
+      "id": "PS0125",
+      "name_ar": "سلفيت",
+      "name_en": "Salfit",
+      "total": 75,
+      "located": 75,
+      "unresolved": 0
+    },
+    {
+      "id": "PS0130",
+      "name_ar": "رام الله والبيرة",
+      "name_en": "Ramallah",
+      "total": 275,
+      "located": 275,
+      "unresolved": 0
+    },
+    {
+      "id": "PS0135",
+      "name_ar": "أريحا والأغوار",
+      "name_en": "Jericho",
+      "total": 33,
+      "located": 33,
+      "unresolved": 0
+    },
+    {
+      "id": "PS0140",
+      "name_ar": "القدس",
+      "name_en": "Jerusalem",
+      "total": 282,
+      "located": 282,
+      "unresolved": 0
+    },
+    {
+      "id": "PS0145",
+      "name_ar": "بيت لحم",
+      "name_en": "Bethlehem",
+      "total": 177,
+      "located": 177,
+      "unresolved": 0
+    },
+    {
+      "id": "PS0150",
+      "name_ar": "الخليل",
+      "name_en": "Hebron",
+      "total": 608,
+      "located": 607,
+      "unresolved": 1
+    },
+    {
+      "id": "PS0255",
+      "name_ar": "شمال غزة",
+      "name_en": "North Gaza",
+      "total": 121,
+      "located": 3,
+      "unresolved": 118
+    },
+    {
+      "id": "PS0260",
+      "name_ar": "غزة",
+      "name_en": "Gaza",
+      "total": 281,
+      "located": 12,
+      "unresolved": 269
+    },
+    {
+      "id": "PS0265",
+      "name_ar": "دير البلح",
+      "name_en": "Deir Al-Balah",
+      "total": 94,
+      "located": 6,
+      "unresolved": 88
+    },
+    {
+      "id": "PS0270",
+      "name_ar": "خان يونس",
+      "name_en": "Khan Younis",
+      "total": 156,
+      "located": 1,
+      "unresolved": 155
+    },
+    {
+      "id": "PS0275",
+      "name_ar": "رفح",
+      "name_en": "Rafah",
+      "total": 82,
+      "located": 0,
+      "unresolved": 82
+    },
+    {
+      "id": null,
+      "name_ar": "غير محدد",
+      "name_en": "Unassigned",
+      "total": 2,
+      "located": 2,
+      "unresolved": 0
+    }
+  ],
+  "registry": {
+    "url": "https://data.humdata.org/dataset/state-of-palestine-schools",
+    "dataset_date": "2022-03-07",
+    "sha256": "25a58a2b007e1fcbfb8f6c27b7a6847192a2a6791aef954072caa8fed3912db3",
+    "match_to_uploaded_workbook": "byte_identical"
+  },
+  "sources": [
+    {
+      "id": "hdx-wb-2015",
+      "title": "State of Palestine - West Bank schools",
+      "publisher": "Ministry of Education and UNICEF, via OCHA oPt / HDX",
+      "url": "https://data.humdata.org/dataset/state-of-palestine-west-bank-schools",
+      "resource_url": "https://data.humdata.org/dataset/0306a338-951c-45ec-a9b1-184a0f099d05/resource/61d4145d-0330-4135-bd53-8a3eec4c6e23/download/schools_wb.zip",
+      "dataset_date": "2015-06-01",
+      "retrieved_on": "2026-10-01",
+      "sha256": "711ae0f732b58b0f804d7712f49e59038381be58c14825801404805fe01612cf",
+      "license": "Creative Commons Attribution",
+      "license_url": "https://www.opendefinition.org/licenses/cc-by",
+      "features": 2359
+    },
+    {
+      "id": "hotosm-2026-09-06",
+      "title": "Education Facilities of Palestine, State of",
+      "publisher": "© OpenStreetMap contributors; Humanitarian OpenStreetMap Team",
+      "url": "https://data.humdata.org/dataset/hotosm_pse_education_facilities",
+      "resource_url": "https://production-raw-data-api.s3.amazonaws.com/ISO3/PSE/education_facilities/hotosm_pse_education_facilities_osm_geojson.zip",
+      "snapshot_date": "2026-09-06",
+      "retrieved_on": "2026-10-01",
+      "sha256": "f3c07627229df23c3976082fd0cdd0ddd821df38fffcb6bc4f8364c84cab6f5c",
+      "license": "ODbL 1.0",
+      "license_url": "https://opendatacommons.org/licenses/odbl/1-0/",
+      "features": 3671
+    }
+  ],
+  "limits": [
+    "Source dates are not evidence of present-day operation, physical condition, or field verification.",
+    "No fuzzy geocoding, guessed governorate centres, or inferred directorate links.",
+    "The two original NULL governorate assignments are preserved.",
+    "Other surveyed ArcGIS/UNOSAT sources were not merged: dates/provenance or identities were insufficiently clear."
+  ]
+}

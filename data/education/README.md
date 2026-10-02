@@ -1,5 +1,7 @@
 # Data provenance and coverage
 
+Coordinate update (2026-10-01): a separate, optional import bundle now supplies 2,381 matched reference locations. The original seed below remains unchanged. See [school-locations.md](../../docs/school-locations.md) for coverage, sources, limitations and safe import commands. The workbook has since been verified byte-for-byte against the HDX Schools resource with catalog date 2022-03-07; that catalog date is not a field-survey date.
+
 Prepared 2026-09-30 from the user's supplied files and the two public institutional directories below. These files are import inputs, not frontend demo data.
 
 - `governorates.json`: all 16 features from `pse_admin2.geojson`, with polygon/multipolygon coordinates retained exactly. Labels use the source's administrative centres; they are not school or directorate office locations. Boundary validity: **2023-10-19**. Arabic governorate names are matched to the source codes.
