@@ -10,24 +10,36 @@ from sqlalchemy import text
 from app.core.config import settings
 from app.core.database import Base, engine
 from app.models.user import User  # noqa: F401 - registers the table metadata
+from app.models.education import Directorate, EducationSource, Governorate, School  # noqa: F401
+from app.models.workflow import (  # noqa: F401
+    ProblemRecord,
+    RecommendationRecord,
+    ResearchReview,
+    ResearchSubmission,
+    ResearchVersion,
+    ReviewAssignment,
+    UserAffiliation,
+    WorkflowEvent,
+)
 from app.routers.assistant import router as assistant_router
 from app.routers.auth import router as auth_router
 from app.routers.profile import router as profile_router
 from app.routers.education import router as education_router
+from app.routers.workflow import router as workflow_router
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    # Development convenience. Replace with Alembic migrations before production rollout.
-    # Keep the existing user-table startup behavior. Education tables use the explicit import command.
-    Base.metadata.create_all(bind=engine, tables=[User.__table__])
+    # Development bootstrap. This creates only missing tables and never drops existing data.
+    # Keep Alembic as the production migration path once the schema stabilizes.
+    Base.metadata.create_all(bind=engine)
     yield
 
 
 app = FastAPI(
     title="PARP API",
     description="Palestinian Action Research Platform API",
-    version="1.1.0",
+    version="1.2.0",
     lifespan=lifespan,
 )
 
@@ -45,6 +57,7 @@ app.include_router(education_router)
 app.include_router(assistant_router)
 app.include_router(auth_router)
 app.include_router(profile_router)
+app.include_router(workflow_router)
 
 
 @app.get("/")

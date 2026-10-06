@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.database import get_db
 from app.models.user import User
 from app.routers.dependencies import get_current_user
@@ -27,10 +28,12 @@ from app.services.auth import (
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
-@router.post("/register", status_code=202)
+@router.post("/register")
 def register(data: RegisterRequest, db: Session = Depends(get_db)):
-    register_user(db, data.full_name, str(data.email), data.password)
-    return {"message": "Verification code sent"}
+    user = register_user(db, data.full_name, str(data.email), data.password)
+    if settings.AUTH_REQUIRE_EMAIL_VERIFICATION:
+        return {"message": "Verification code sent"}
+    return token_response(user)
 
 
 @router.post("/verify-otp", response_model=TokenResponse)
@@ -46,7 +49,7 @@ def resend_otp(data: ResendOtpRequest, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=TokenResponse)
 def login(data: LoginRequest, db: Session = Depends(get_db)):
-    return token_response(authenticate(db, str(data.email), data.password))
+    return token_response(authenticate(db, str(data.email), data.password, data.role))
 
 
 @router.post("/refresh", response_model=TokenResponse)

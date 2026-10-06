@@ -3,6 +3,7 @@ import re
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from app.core.config import settings
+from app.domain.roles import RESEARCHER, validate_role
 
 
 PASSWORD_RE = re.compile(r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{10,72}$")
@@ -44,11 +45,17 @@ class RegisterRequest(BaseModel):
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=1, max_length=72)
+    role: str = RESEARCHER
 
     @field_validator("email")
     @classmethod
     def allowed_domain(cls, value: EmailStr) -> str:
         return normalize_allowed_email(str(value))
+
+    @field_validator("role")
+    @classmethod
+    def supported_role(cls, value: str) -> str:
+        return validate_role(value)
 
 
 class OtpRequest(BaseModel):

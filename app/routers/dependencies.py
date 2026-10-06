@@ -2,8 +2,10 @@ from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import decode_token
+from app.domain.roles import normalize_role
 from app.models.user import User
 from app.repositories.users import by_id
 
@@ -23,6 +25,12 @@ def get_current_user(
         raise HTTPException(status_code=401, detail="Invalid or expired token")
 
     user = by_id(db, int(payload["sub"]))
-    if not user or not user.is_active or not user.is_verified:
+    if not user or not user.is_active:
         raise HTTPException(status_code=401, detail="Invalid account")
+    if settings.AUTH_REQUIRE_EMAIL_VERIFICATION and not user.is_verified:
+        raise HTTPException(status_code=401, detail="Invalid account")
+    if user.role == "user":
+        user.role = normalize_role(user.role)
+        db.commit()
+        db.refresh(user)
     return user

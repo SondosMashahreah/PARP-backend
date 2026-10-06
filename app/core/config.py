@@ -13,13 +13,7 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 14
     OTP_EXPIRE_MINUTES: int = 5
     ALLOWED_EMAIL_DOMAIN: str = "meo.edu.ps"
-
-    MAIL_HOST: str = ""
-    MAIL_PORT: int = 587
-    MAIL_USERNAME: str = ""
-    MAIL_PASSWORD: str = ""
-    MAIL_FROM: str = ""
-    MAIL_STARTTLS: bool = True
+    AUTH_REQUIRE_EMAIL_VERIFICATION: bool = False
 
     MINIO_ENDPOINT: str = "localhost:9000"
     MINIO_ACCESS_KEY: str = "parp_minio"
