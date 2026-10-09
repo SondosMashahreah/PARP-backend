@@ -26,6 +26,7 @@ class DecisionRequest(BaseModel):
 
 class UserAccessUpdate(BaseModel):
     role: str
+    is_active: bool | None = None
     governorate_id: str | None = Field(default=None, max_length=20)
     directorate_id: str | None = Field(default=None, max_length=80)
     school_id: str | None = Field(default=None, max_length=80)

@@ -702,12 +702,23 @@ def update_user_access(db: Session, actor: User, target_user_id: int, data) -> d
         raise ApplicationError(404, "User not found")
     if data.role not in ALL_AUTH_ROLES:
         raise ApplicationError(422, "Unsupported role")
+    if role_of(target) == SYSTEM_ADMIN and (data.role != SYSTEM_ADMIN or data.is_active is False):
+        active_admins = int(db.scalar(
+            select(func.count()).select_from(User).where(
+                User.role == SYSTEM_ADMIN,
+                User.is_active.is_(True),
+            )
+        ) or 0)
+        if active_admins <= 1:
+            raise ApplicationError(409, "The last active system administrator cannot be disabled or demoted")
     _validate_education_ids(db, data.governorate_id, data.directorate_id, data.school_id)
     if data.school_id and data.directorate_id:
         school = db.get(School, data.school_id)
         if school and school.directorate_id is None:
             school.directorate_id = data.directorate_id
     target.role = data.role
+    if data.is_active is not None:
+        target.is_active = data.is_active
     row = affiliation(db, target.id) or UserAffiliation(user_id=target.id)
     if not db.get(UserAffiliation, target.id):
         db.add(row)
