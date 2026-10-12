@@ -12,7 +12,7 @@ def test_expected_roles_exist():
     assert RESEARCHER in ALL_AUTH_ROLES
     assert REVIEWER in ALL_AUTH_ROLES
     assert SYSTEM_ADMIN in ALL_AUTH_ROLES
-    assert len(ALL_AUTH_ROLES) == 9
+    assert len(ALL_AUTH_ROLES) == 8
 
 
 def test_legacy_user_maps_to_researcher():

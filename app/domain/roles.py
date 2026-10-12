@@ -1,5 +1,4 @@
 RESEARCHER = "researcher"
-SUPERVISOR = "supervisor"
 REVIEWER = "reviewer"
 SCHOOL_MANAGER = "school_manager"
 DIRECTORATE_MANAGER = "directorate_manager"
@@ -10,7 +9,6 @@ SYSTEM_ADMIN = "system_admin"
 
 ALL_AUTH_ROLES = {
     RESEARCHER,
-    SUPERVISOR,
     REVIEWER,
     SCHOOL_MANAGER,
     DIRECTORATE_MANAGER,
@@ -31,17 +29,13 @@ ROLE_CAPABILITIES = {
         "research.publish",
         "certificate.view",
     ],
-    SUPERVISOR: [
-        "researchers.mentor",
-        "schools.monitor",
-        "research.progress.read",
-    ],
     REVIEWER: [
         "review.invitation.accept",
         "review.confidentiality.accept",
         "review.assigned.read",
         "review.submit",
         "review.revision.read",
+        "research.decide",
     ],
     SCHOOL_MANAGER: [
         "school.accounts.approve",
@@ -55,16 +49,14 @@ ROLE_CAPABILITIES = {
         "directorate.reports.export",
     ],
     SCIENTIFIC_COMMITTEE: [
-        "criteria.manage",
-        "reviewers.assign",
-        "research.decide",
-        "publication.manage",
+        "conference.manage",
+        "conference.participations.review",
+        "conference.notices.send",
     ],
     ORGANIZING_COMMITTEE: [
-        "conference.manage",
+        "conference.assigned.read",
         "schedule.manage",
         "news.manage",
-        "communications.manage",
         "certificates.manage",
     ],
     DECISION_MAKER: [
@@ -76,6 +68,8 @@ ROLE_CAPABILITIES = {
     ],
     SYSTEM_ADMIN: [
         "permissions.manage",
+        "reviewers.assign",
+        "publication.payment.confirm",
         "content.manage",
         "backups.manage",
         "audit.read",

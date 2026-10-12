@@ -26,6 +26,7 @@ from app.routers.auth import router as auth_router
 from app.routers.profile import router as profile_router
 from app.routers.education import router as education_router
 from app.routers.workflow import router as workflow_router
+from app.routers.researcher import router as researcher_router
 
 
 @asynccontextmanager
@@ -58,6 +59,7 @@ app.include_router(assistant_router)
 app.include_router(auth_router)
 app.include_router(profile_router)
 app.include_router(workflow_router)
+app.include_router(researcher_router)
 
 
 @app.get("/")
@@ -80,3 +82,6 @@ def database_health():
 @app.exception_handler(ApplicationError)
 async def application_error_handler(request: Request, error: ApplicationError):
     return JSONResponse(status_code=error.status_code, content={"detail": error.detail})
+
+from app.routers.platform import router as platform_router
+app.include_router(platform_router)

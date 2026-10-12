@@ -77,3 +77,8 @@ def presigned_avatar_url(object_name: str | None) -> str | None:
 
 def presigned_file_url(object_name: str | None) -> str | None:
     return _presigned_url(object_name)
+
+
+
+def upload_certificate(user_id: int, data: bytes) -> str:
+    return _upload(f"certificates/{user_id}/{uuid4().hex}.pdf", data, "application/pdf")

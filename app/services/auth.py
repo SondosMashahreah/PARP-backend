@@ -121,6 +121,8 @@ def authenticate(db: Session, email: str, password: str, requested_role: str = R
     if not verify_password(password, user.password_hash):
         raise ApplicationError(status_code=401, detail="Invalid email or password")
 
+    if normalize_role(user.role) == "organizing_committee":
+        raise ApplicationError(403, "Use committee username login")
     actual_role = normalize_role(user.role)
     if actual_role != requested_role:
         raise ApplicationError(status_code=403, detail="The selected role does not match this account")

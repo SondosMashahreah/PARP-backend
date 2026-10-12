@@ -50,7 +50,7 @@ class LoginRequest(BaseModel):
     @field_validator("email")
     @classmethod
     def allowed_domain(cls, value: EmailStr) -> str:
-        return normalize_allowed_email(str(value))
+        return str(value).strip().lower()
 
     @field_validator("role")
     @classmethod

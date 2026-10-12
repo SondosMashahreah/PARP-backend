@@ -14,7 +14,6 @@ from app.domain.roles import (
     REVIEWER,
     SCHOOL_MANAGER,
     SCIENTIFIC_COMMITTEE,
-    SUPERVISOR,
     SYSTEM_ADMIN,
     normalize_role,
 )
@@ -115,13 +114,16 @@ def approve_affiliation(db: Session, actor: User, target_user_id: int) -> dict:
     target = affiliation(db, target_user_id)
     if not target:
         raise ApplicationError(404, "Affiliation request not found")
+    target_user = db.get(User, target_user_id)
+    if role_of(actor) != SYSTEM_ADMIN and (target_user_id == actor.id or not target_user or role_of(target_user) != RESEARCHER):
+        raise ApplicationError(403, "Only the administrator may approve institutional managers")
     actor_aff = affiliation(db, actor.id)
     actor_role = role_of(actor)
     if actor_role == SCHOOL_MANAGER:
-        if not actor_aff or not actor_aff.school_id or actor_aff.school_id != target.school_id:
+        if not actor_aff or actor_aff.approval_status != "approved" or not actor_aff.school_id or actor_aff.school_id != target.school_id:
             raise ApplicationError(403, "User is outside your school")
     elif actor_role == DIRECTORATE_MANAGER:
-        if not actor_aff or not actor_aff.directorate_id or actor_aff.directorate_id != target.directorate_id:
+        if not actor_aff or actor_aff.approval_status != "approved" or not actor_aff.directorate_id or actor_aff.directorate_id != target.directorate_id:
             raise ApplicationError(403, "User is outside your directorate")
     _validate_education_ids(db, target.governorate_id, target.directorate_id, target.school_id)
     if target.school_id and target.directorate_id:
@@ -193,6 +195,7 @@ def create_submission(
     file_name: str,
     content_type: str,
     file_bytes: bytes,
+    draft=None,
 ) -> dict:
     ensure_role(user, RESEARCHER)
     aff = affiliation(db, user.id)
@@ -202,7 +205,11 @@ def create_submission(
         raise ApplicationError(413, "Research file must be 25 MB or smaller")
     extension = _research_extension(content_type, file_name)
     form_data = _parse_form_json(form_json)
+    kind = form_data.get('kind', 'research')
+    if kind not in ('research', 'practice'): raise ApplicationError(422, 'Invalid submission kind')
+    if not (abstract or form_data.get('abstract') or '').strip(): raise ApplicationError(422, 'An abstract is required')
     submission = ResearchSubmission(
+        publication_type=kind,
         researcher_id=user.id,
         governorate_id=aff.governorate_id,
         directorate_id=aff.directorate_id,
@@ -245,6 +252,8 @@ def create_submission(
         to_status="submitted",
         note="Initial research submission",
     ))
+    if draft is not None:
+        draft.submission_id = submission.id
     db.commit()
     db.refresh(submission)
     return serialize_submission(db, submission, user)
@@ -261,16 +270,32 @@ def resubmit(
     file_bytes: bytes,
 ) -> dict:
     ensure_role(user, RESEARCHER)
-    submission = db.get(ResearchSubmission, submission_id)
+    submission = db.scalar(select(ResearchSubmission).where(ResearchSubmission.id == submission_id).with_for_update())
     if not submission or submission.researcher_id != user.id:
         raise ApplicationError(404, "Research submission not found")
-    if submission.status != "revision_requested":
+    if submission.status not in {"revision_requested", "rejected"}:
         raise ApplicationError(409, "This research is not waiting for a revised version")
     if len(file_bytes) > MAX_RESEARCH_BYTES:
         raise ApplicationError(413, "Research file must be 25 MB or smaller")
     extension = _research_extension(content_type, file_name)
     next_version = submission.current_version + 1
     form_data = _parse_form_json(form_json)
+    from app.schemas.researcher import DraftContent
+    from pydantic import ValidationError
+    allowed = set(DraftContent.model_fields) - {"keywords"}
+    edits = {key: value for key, value in form_data.items() if key in allowed}
+    try:
+        validated = DraftContent(**edits)
+    except ValidationError as exc:
+        raise ApplicationError(422, "Invalid research fields") from exc
+    for key in ("title", "research_field", "problem"):
+        if key in edits and len(edits[key].strip()) < 2:
+            raise ApplicationError(422, "Title, field and problem cannot be empty")
+    for key in edits:
+        setattr(submission, key, getattr(validated, key))
+    if "keywords" in form_data:
+        submission.keywords = _read_keywords(form_data)
+
     object_name = upload_research_file(
         user.id,
         submission.id,
@@ -300,11 +325,13 @@ def resubmit(
 
 
 def assign_reviewer(db: Session, actor: User, submission_id: int, reviewer_id: int) -> dict:
-    ensure_role(actor, SCIENTIFIC_COMMITTEE)
+    ensure_role(actor, SYSTEM_ADMIN)
     submission = db.get(ResearchSubmission, submission_id)
     reviewer = db.get(User, reviewer_id)
     if not submission:
         raise ApplicationError(404, "Research submission not found")
+    if submission.status == "published":
+        raise ApplicationError(409, "Published work cannot be reassigned")
     if not reviewer or role_of(reviewer) != REVIEWER or not reviewer.is_active:
         raise ApplicationError(422, "Selected user is not an active reviewer")
     assignment = db.scalar(select(ReviewAssignment).where(
@@ -354,6 +381,8 @@ def submit_review(db: Session, user: User, assignment_id: int, data) -> dict:
     submission = db.get(ResearchSubmission, assignment.submission_id)
     if not submission:
         raise ApplicationError(404, "Research submission not found")
+    if submission.status == "published":
+        raise ApplicationError(409, "Published work cannot be reviewed again")
     review = ResearchReview(
         assignment_id=assignment.id,
         submission_id=submission.id,
@@ -387,10 +416,13 @@ def submit_review(db: Session, user: User, assignment_id: int, data) -> dict:
 
 
 def scientific_decision(db: Session, actor: User, submission_id: int, data) -> dict:
-    ensure_role(actor, SCIENTIFIC_COMMITTEE)
-    submission = db.get(ResearchSubmission, submission_id)
+    ensure_role(actor, REVIEWER)
+    submission = db.scalar(select(ResearchSubmission).where(ResearchSubmission.id == submission_id).with_for_update())
     if not submission:
         raise ApplicationError(404, "Research submission not found")
+    assignment = db.scalar(select(ReviewAssignment).where(ReviewAssignment.submission_id == submission_id, ReviewAssignment.reviewer_id == actor.id))
+    if not assignment or assignment.status != 'completed': raise ApplicationError(403, 'Complete the assigned review before a decision')
+    if submission.status == 'published': raise ApplicationError(409, 'Published items cannot be changed')
     mapping = {
         "approve": "approved",
         "revision": "revision_requested",
@@ -399,7 +431,6 @@ def scientific_decision(db: Session, actor: User, submission_id: int, data) -> d
     }
     next_status = mapping[data.decision]
     submission.publication_allowed = data.decision == "approve"
-    submission.publication_type = "research"
     _event(db, submission, actor, "scientific_decision", next_status, data.note.strip())
     db.commit()
     db.refresh(submission)
@@ -430,12 +461,16 @@ def _create_knowledge_outputs(db: Session, submission: ResearchSubmission):
 
 def publish_research(db: Session, user: User, submission_id: int) -> dict:
     ensure_role(user, RESEARCHER)
-    submission = db.get(ResearchSubmission, submission_id)
+    submission = db.scalar(select(ResearchSubmission).where(ResearchSubmission.id == submission_id).with_for_update())
     if not submission or submission.researcher_id != user.id:
         raise ApplicationError(404, "Research submission not found")
     if submission.status != "approved" or not submission.publication_allowed:
         raise ApplicationError(409, "Research can be published only after scientific approval")
-    submission.publication_type = "research"
+    if submission.publication_type != 'research': raise ApplicationError(409, 'Use practice publication')
+    from app.models.platform import PublicationPayment
+    payment = db.get(PublicationPayment, submission.id)
+    if not payment or not payment.confirmed or payment.paid_agorot < payment.required_agorot:
+        raise ApplicationError(409, 'Administrator payment confirmation is required')
     submission.published_at = _now()
     _event(db, submission, user, "published", "published", "Published in the National Repository")
     _create_knowledge_outputs(db, submission)
@@ -446,10 +481,10 @@ def publish_research(db: Session, user: User, submission_id: int) -> dict:
 
 def publish_as_practice(db: Session, user: User, submission_id: int) -> dict:
     ensure_role(user, RESEARCHER)
-    submission = db.get(ResearchSubmission, submission_id)
+    submission = db.scalar(select(ResearchSubmission).where(ResearchSubmission.id == submission_id).with_for_update())
     if not submission or submission.researcher_id != user.id:
         raise ApplicationError(404, "Research submission not found")
-    if submission.status != "practice_suggested":
+    if not (submission.status == "practice_suggested" or (submission.publication_type == "practice" and submission.status == "approved" and submission.publication_allowed)):
         raise ApplicationError(409, "This submission was not proposed as a practice")
     submission.publication_type = "practice"
     submission.publication_allowed = True
@@ -487,9 +522,11 @@ def serialize_submission(db: Session, submission: ResearchSubmission, viewer: Us
     role = role_of(viewer) if viewer else ""
     can_see_reviews = viewer and (
         viewer.id == submission.researcher_id
-        or role == SCIENTIFIC_COMMITTEE
         or any(review.reviewer_id == viewer.id for review in reviews)
     )
+    assigned = viewer and role == REVIEWER and db.scalar(select(ReviewAssignment.id).where(ReviewAssignment.submission_id == submission.id, ReviewAssignment.reviewer_id == viewer.id, ReviewAssignment.confidentiality_accepted.is_(True)))
+    private = bool(viewer and (viewer.id == submission.researcher_id or role == SYSTEM_ADMIN or assigned))
+    full_text = private or (submission.publication_type == 'practice' and submission.status == 'published')
     return {
         "id": submission.id,
         "researcher_id": submission.researcher_id,
@@ -502,11 +539,11 @@ def serialize_submission(db: Session, submission: ResearchSubmission, viewer: Us
         "abstract": submission.abstract,
         "research_field": submission.research_field,
         "keywords": submission.keywords,
-        "problem": submission.problem,
-        "research_question": submission.research_question,
-        "intervention": submission.intervention,
-        "results": submission.results,
-        "recommendations": submission.recommendations,
+        "problem": submission.problem if full_text else None,
+        "research_question": submission.research_question if full_text else None,
+        "intervention": submission.intervention if full_text else None,
+        "results": submission.results if full_text else None,
+        "recommendations": submission.recommendations if full_text else None,
         "status": submission.status,
         "current_version": submission.current_version,
         "publication_allowed": submission.publication_allowed,
@@ -518,14 +555,14 @@ def serialize_submission(db: Session, submission: ResearchSubmission, viewer: Us
             "name": version.original_file_name,
             "content_type": version.content_type,
             "url": presigned_file_url(version.file_object_name),
-        } if version else None,
+        } if version and full_text else None,
         "events": [{
             "event_type": event.event_type,
             "from_status": event.from_status,
             "to_status": event.to_status,
             "note": event.note,
             "created_at": event.created_at,
-        } for event in events],
+        } for event in events] if private else [],
         "reviews": [{
             "id": review.id,
             "reviewer_id": review.reviewer_id,
@@ -555,11 +592,11 @@ def _scope_statement(db: Session, user: User):
     role = role_of(user)
     aff = affiliation(db, user.id)
     if role == SCHOOL_MANAGER:
-        if not aff or not aff.school_id:
+        if not aff or aff.approval_status != "approved" or not aff.school_id:
             return statement.where(False)
         return statement.where(ResearchSubmission.school_id == aff.school_id)
-    if role in {SUPERVISOR, DIRECTORATE_MANAGER}:
-        if not aff or not aff.directorate_id:
+    if role in {DIRECTORATE_MANAGER}:
+        if not aff or aff.approval_status != "approved" or not aff.directorate_id:
             return statement.where(False)
         return statement.where(ResearchSubmission.directorate_id == aff.directorate_id)
     return statement
@@ -586,7 +623,7 @@ def _visible_submission_statement(db: Session, user: User):
         return (select(ResearchSubmission)
                 .join(ReviewAssignment, ReviewAssignment.submission_id == ResearchSubmission.id)
                 .where(ReviewAssignment.reviewer_id == user.id))
-    if role in {SCHOOL_MANAGER, DIRECTORATE_MANAGER, SUPERVISOR}:
+    if role in {SCHOOL_MANAGER, DIRECTORATE_MANAGER}:
         return _scope_statement(db, user)
     if role == SCIENTIFIC_COMMITTEE:
         return select(ResearchSubmission)
@@ -631,7 +668,7 @@ def workspace(db: Session, user: User) -> dict:
             .order_by(ReviewAssignment.assigned_at.desc())
         ).all()
         payload["assignments"] = [serialize_assignment(db, row, user) for row in rows]
-    elif role == SCIENTIFIC_COMMITTEE:
+    elif role == SYSTEM_ADMIN:
         rows = db.scalars(select(ResearchSubmission).order_by(ResearchSubmission.updated_at.desc()).limit(200)).all()
         payload["submissions"] = [serialize_submission(db, row, user) for row in rows]
         reviewers = db.scalars(select(User).where(User.is_active.is_(True)).order_by(User.full_name)).all()
@@ -647,15 +684,15 @@ def workspace(db: Session, user: User) -> dict:
                 "specialization": reviewer_aff.specialization if reviewer_aff else None,
                 "research_field": reviewer_aff.research_field if reviewer_aff else None,
             })
-    elif role in {SCHOOL_MANAGER, DIRECTORATE_MANAGER, SUPERVISOR}:
+    elif role in {SCHOOL_MANAGER, DIRECTORATE_MANAGER}:
         rows = db.scalars(_scope_statement(db, user).order_by(ResearchSubmission.updated_at.desc()).limit(200)).all()
         payload["submissions"] = [serialize_submission(db, row, user) for row in rows]
         if role in {SCHOOL_MANAGER, DIRECTORATE_MANAGER}:
             actor_aff = affiliation(db, user.id)
             request_statement = select(UserAffiliation).where(UserAffiliation.approval_status == "requested")
-            if role == SCHOOL_MANAGER and actor_aff and actor_aff.school_id:
+            if role == SCHOOL_MANAGER and actor_aff and actor_aff.approval_status == "approved" and actor_aff.school_id:
                 request_statement = request_statement.where(UserAffiliation.school_id == actor_aff.school_id)
-            elif role == DIRECTORATE_MANAGER and actor_aff and actor_aff.directorate_id:
+            elif role == DIRECTORATE_MANAGER and actor_aff and actor_aff.approval_status == "approved" and actor_aff.directorate_id:
                 request_statement = request_statement.where(UserAffiliation.directorate_id == actor_aff.directorate_id)
             else:
                 request_statement = request_statement.where(False)
@@ -800,12 +837,9 @@ def update_recommendation_status(db: Session, user: User, recommendation_id: int
 
 
 def problems(db: Session, user: User) -> list[dict]:
-    ensure_role(user, DECISION_MAKER, SCIENTIFIC_COMMITTEE, SUPERVISOR)
-    statement = select(ProblemRecord).order_by(ProblemRecord.created_at.desc())
-    if role_of(user) == SUPERVISOR:
+    ensure_role(user, RESEARCHER, DECISION_MAKER, DIRECTORATE_MANAGER, SCIENTIFIC_COMMITTEE)
+    statement = select(ProblemRecord)
+    if role_of(user) == DIRECTORATE_MANAGER:
         aff = affiliation(db, user.id)
-        if not aff or not aff.directorate_id:
-            return []
-        statement = statement.where(ProblemRecord.directorate_id == aff.directorate_id)
-    rows = db.scalars(statement).all()
-    return [serialize_problem(row) for row in rows]
+        statement = statement.where(ProblemRecord.directorate_id == aff.directorate_id) if aff and aff.approval_status == 'approved' else statement.where(False)
+    return [serialize_problem(row) for row in db.scalars(statement.order_by(ProblemRecord.created_at.desc())).all()]
