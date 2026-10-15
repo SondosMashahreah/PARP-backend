@@ -85,3 +85,6 @@ async def application_error_handler(request: Request, error: ApplicationError):
 
 from app.routers.platform import router as platform_router
 app.include_router(platform_router)
+
+from app.routers.excellence import router as excellence_router
+app.include_router(excellence_router)
