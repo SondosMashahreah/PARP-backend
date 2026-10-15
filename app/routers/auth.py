@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+﻿from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -57,6 +57,6 @@ def refresh(data: RefreshRequest, db: Session = Depends(get_db)):
     return refresh_tokens(db, data.refresh_token)
 
 
-@router.get("/me", response_model=UserResponse)
-def me(current_user: User = Depends(get_current_user)):
+@router.get("/me")
+def me(current_user=Depends(get_current_user)):
     return user_response(current_user)

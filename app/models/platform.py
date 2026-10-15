@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+﻿from datetime import datetime, timezone
 from sqlalchemy import (
     Integer,
     String,
@@ -74,9 +74,23 @@ class PlatformNotice(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
 
 
-class CommitteeCredential(Base):
-    __tablename__ = "committee_credentials"
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
-    username: Mapped[str] = mapped_column(String(80), unique=True)
-    conference_id: Mapped[int] = mapped_column(ForeignKey("conferences.id"))
-    must_change_password: Mapped[bool] = mapped_column(Boolean, default=True)
+class CommitteeAccount(Base):
+    __tablename__ = "committee_accounts"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    username: Mapped[str] = mapped_column(String(80), unique=True, index=True)
+    password_hash: Mapped[str] = mapped_column(String(255))
+    conference_id: Mapped[int] = mapped_column(
+        ForeignKey("conferences.id"), index=True
+    )
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    must_change_password: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+
+    @property
+    def role(self) -> str:
+        return "organizing_committee"
+
+    @property
+    def full_name(self) -> str:
+        return self.username

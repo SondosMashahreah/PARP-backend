@@ -1,4 +1,4 @@
-"""Platform use cases: payments, conferences and scoped participation reporting."""
+﻿"""Platform use cases: payments, conferences and scoped participation reporting."""
 
 from datetime import datetime, timezone
 from io import BytesIO
@@ -12,7 +12,7 @@ from app.models.platform import (
     Conference,
     ConferenceParticipation,
     PlatformNotice,
-    CommitteeCredential,
+    CommitteeAccount,
 )
 from app.models.workflow import ResearchSubmission, UserAffiliation
 from app.models.education import School, Directorate
@@ -24,8 +24,12 @@ from app.services.workflow import (
     serialize_submission,
 )
 from app.infrastructure.minio_storage import _upload, presigned_file_url
-from app.core.security import hash_password, verify_password
-from app.services.auth import token_response
+from app.core.security import (
+    create_access_token,
+    create_refresh_token,
+    hash_password,
+    verify_password,
+)
 
 
 def locked_research(db, submission_id):
@@ -168,12 +172,7 @@ def scope(db, user, query, model):
             else query.where(False)
         )
     if role == "organizing_committee" and model is ConferenceParticipation:
-        credential = db.get(CommitteeCredential, user.id)
-        return (
-            query.where(model.conference_id == credential.conference_id)
-            if credential and not credential.must_change_password
-            else query.where(False)
-        )
+        return query.where(model.conference_id == user.conference_id)
     if role in ("decision_maker", "scientific_committee", "system_admin"):
         return query
     return query.where(False)
@@ -327,6 +326,8 @@ def notify_conference(db, user, conference_id, text):
 
 
 def notices(db, user):
+    if role_of(user) == "organizing_committee":
+        return []
     return [
         dict(id=r.id, text=r.text, created_at=r.created_at)
         for r in db.scalars(
@@ -339,20 +340,15 @@ def notices(db, user):
 
 def create_user(db, actor, data):
     ensure_role(actor, "system_admin")
+    if data.role == "organizing_committee":
+        raise ApplicationError(
+            422,
+            "Create organizing committee accounts with the committee endpoint",
+        )
     if db.scalar(
         select(User.id).where(func.lower(User.email) == str(data.email).lower())
     ):
         raise ApplicationError(409, "Email already exists")
-    if data.role == "organizing_committee" and not db.get(
-        Conference, data.conference_id
-    ):
-        raise ApplicationError(404, "Conference not found")
-    if data.username and db.scalar(
-        select(CommitteeCredential.user_id).where(
-            CommitteeCredential.username == data.username.lower()
-        )
-    ):
-        raise ApplicationError(409, "Username already exists")
     row = User(
         full_name=data.full_name,
         email=str(data.email).lower(),
@@ -362,15 +358,6 @@ def create_user(db, actor, data):
         is_verified=True,
     )
     db.add(row)
-    db.flush()
-    if data.role == "organizing_committee":
-        db.add(
-            CommitteeCredential(
-                user_id=row.id,
-                username=data.username.lower(),
-                conference_id=data.conference_id,
-            )
-        )
     try:
         db.commit()
     except IntegrityError:
@@ -379,33 +366,78 @@ def create_user(db, actor, data):
     return dict(id=row.id, full_name=row.full_name, role=row.role)
 
 
-def committee_login(db, data):
-    credential = db.scalar(
-        select(CommitteeCredential).where(
-            CommitteeCredential.username == data.username.lower()
+def create_committee_account(db, actor, data):
+    ensure_role(actor, "system_admin")
+    if not db.get(Conference, data.conference_id):
+        raise ApplicationError(404, "Conference not found")
+
+    username = data.username.lower()
+    existing = db.scalar(
+        select(CommitteeAccount.id).where(
+            CommitteeAccount.username == username
         )
     )
-    user = db.get(User, credential.user_id) if credential else None
+    if existing:
+        raise ApplicationError(409, "Username already exists")
+
+    row = CommitteeAccount(
+        username=username,
+        password_hash=hash_password(data.password),
+        conference_id=data.conference_id,
+        is_active=True,
+        must_change_password=False,
+    )
+    db.add(row)
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise ApplicationError(409, "Committee account already exists")
+    db.refresh(row)
+    return {
+        "id": row.id,
+        "username": row.username,
+        "conference_id": row.conference_id,
+    }
+
+
+def committee_login(db, data):
+    account = db.scalar(
+        select(CommitteeAccount).where(
+            CommitteeAccount.username == data.username.lower()
+        )
+    )
     if (
-        not user
-        or not user.is_active
-        or role_of(user) != "organizing_committee"
-        or not verify_password(data.password, user.password_hash)
+        not account
+        or not account.is_active
+        or not verify_password(data.password, account.password_hash)
     ):
         raise ApplicationError(401, "Invalid credentials")
+
+    subject = f"committee:{account.id}"
     return {
-        **token_response(user),
-        "must_change_password": credential.must_change_password,
+        "access_token": create_access_token(subject),
+        "refresh_token": create_refresh_token(subject),
+        "token_type": "bearer",
+        "user": {
+            "id": account.id,
+            "full_name": account.username,
+            "email": None,
+            "role": "organizing_committee",
+            "is_verified": True,
+            "avatar_url": None,
+            "conference_id": account.conference_id,
+        },
+        "must_change_password": account.must_change_password,
     }
 
 
 def change_password(db, user, data):
     ensure_role(user, "organizing_committee")
-    credential = db.get(CommitteeCredential, user.id)
-    if not credential:
-        raise ApplicationError(403, "No committee account")
+    if not isinstance(user, CommitteeAccount):
+        raise ApplicationError(403, "Invalid committee account")
     user.password_hash = hash_password(data.password)
-    credential.must_change_password = False
+    user.must_change_password = False
     db.commit()
     return {"ok": True}
 
@@ -494,29 +526,4 @@ def statistics(db, user):
     )
 
 
-def configure_committee(db, actor, user_id, data):
-    """Provision an existing committee account without deleting its history."""
-    ensure_role(actor, "system_admin")
-    target = db.get(User, user_id)
-    if not target or role_of(target) != "organizing_committee":
-        raise ApplicationError(404, "Organizing committee account not found")
-    if not db.get(Conference, data.conference_id):
-        raise ApplicationError(404, "Conference not found")
-    existing = db.scalar(
-        select(CommitteeCredential).where(
-            CommitteeCredential.username == data.username.lower()
-        )
-    )
-    if existing and existing.user_id != user_id:
-        raise ApplicationError(409, "Username already in use")
-    row = db.get(CommitteeCredential, user_id)
-    if not row:
-        row = CommitteeCredential(user_id=user_id)
-        db.add(row)
-    row.username = data.username.lower()
-    row.conference_id = data.conference_id
-    row.must_change_password = True
-    target.password_hash = hash_password(data.password)
-    target.is_verified = True
-    db.commit()
-    return {"id": user_id}
+

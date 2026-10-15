@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+﻿from datetime import datetime, timedelta, timezone
 
 import bcrypt
 from jose import JWTError, jwt
@@ -17,10 +17,10 @@ def verify_password(password: str, password_hash: str) -> bool:
         return False
 
 
-def _create_token(user_id: int, token_type: str, expires_delta: timedelta) -> str:
+def _create_token(subject: int | str, token_type: str, expires_delta: timedelta) -> str:
     now = datetime.now(timezone.utc)
     payload = {
-        "sub": str(user_id),
+        "sub": str(subject),
         "type": token_type,
         "iat": now,
         "exp": now + expires_delta,
@@ -28,17 +28,17 @@ def _create_token(user_id: int, token_type: str, expires_delta: timedelta) -> st
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
-def create_access_token(user_id: int) -> str:
+def create_access_token(subject: int | str) -> str:
     return _create_token(
-        user_id,
+        subject,
         "access",
         timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
     )
 
 
-def create_refresh_token(user_id: int) -> str:
+def create_refresh_token(subject: int | str) -> str:
     return _create_token(
-        user_id,
+        subject,
         "refresh",
         timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
     )

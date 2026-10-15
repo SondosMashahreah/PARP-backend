@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Form, File, UploadFile
+﻿from fastapi import APIRouter, Depends, Form, File, UploadFile
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.routers.dependencies import get_current_user
@@ -10,6 +10,7 @@ from app.schemas.platform import (
     AdminUserCreate,
     CommitteeLogin,
     PasswordChange,
+    CommitteeAccountCreate,
 )
 from app.services import platform as service
 from app.services.workflow import ensure_role
@@ -111,6 +112,15 @@ def create_user(
     return service.create_user(db, user, data)
 
 
+@router.post("/committee/accounts")
+def create_committee_account(
+    data: CommitteeAccountCreate,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    return service.create_committee_account(db, user, data)
+
+
 @router.post("/committee/login")
 def committee_login(data: CommitteeLogin, db: Session = Depends(get_db)):
     return service.committee_login(db, data)
@@ -134,14 +144,4 @@ def map_data(db: Session = Depends(get_db), user=Depends(get_current_user)):
     return service.statistics(db, user)
 
 
-from app.schemas.platform import CommitteeSetup
 
-
-@router.put("/users/{user_id}/committee")
-def configure_committee(
-    user_id: int,
-    data: CommitteeSetup,
-    db: Session = Depends(get_db),
-    user=Depends(get_current_user),
-):
-    return service.configure_committee(db, user, user_id, data)

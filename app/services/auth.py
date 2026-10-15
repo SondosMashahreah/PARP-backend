@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+﻿from datetime import datetime, timezone
 
 from app.domain.errors import ApplicationError
 from app.domain.roles import RESEARCHER, normalize_role
@@ -13,12 +13,23 @@ from app.core.security import (
     verify_password,
 )
 from app.models.user import User
+from app.models.platform import CommitteeAccount
 from app.infrastructure.email import send_otp_email
 from app.services.otp import generate_otp, hash_otp, otp_expiry, verify_otp
 from app.infrastructure.minio_storage import presigned_avatar_url
 
 
-def user_response(user: User) -> dict:
+def user_response(user: User | CommitteeAccount) -> dict:
+    if isinstance(user, CommitteeAccount):
+        return {
+            "id": user.id,
+            "full_name": user.username,
+            "email": None,
+            "role": "organizing_committee",
+            "is_verified": True,
+            "avatar_url": None,
+            "conference_id": user.conference_id,
+        }
     return {
         "id": user.id,
         "full_name": user.full_name,
@@ -144,11 +155,36 @@ def resend_verification(db, email):
 
 def refresh_tokens(db, refresh_token):
     from app.core.security import decode_token
+
     payload = decode_token(refresh_token, "refresh")
-    if not payload or not str(payload.get("sub", "")).isdigit():
+    if not payload:
         raise ApplicationError(401, "Invalid or expired refresh token")
-    user = users.by_id(db, int(payload["sub"]))
-    if not user or not user.is_active or (settings.AUTH_REQUIRE_EMAIL_VERIFICATION and not user.is_verified):
+
+    subject = str(payload.get("sub", ""))
+    if subject.startswith("committee:"):
+        raw_id = subject.split(":", 1)[1]
+        if not raw_id.isdigit():
+            raise ApplicationError(401, "Invalid or expired refresh token")
+        account = db.get(CommitteeAccount, int(raw_id))
+        if not account or not account.is_active:
+            raise ApplicationError(401, "Invalid account")
+        committee_subject = f"committee:{account.id}"
+        return {
+            "access_token": create_access_token(committee_subject),
+            "refresh_token": create_refresh_token(committee_subject),
+            "token_type": "bearer",
+        }
+
+    if not subject.isdigit():
+        raise ApplicationError(401, "Invalid or expired refresh token")
+
+    user = users.by_id(db, int(subject))
+    if not user or not user.is_active or (
+        settings.AUTH_REQUIRE_EMAIL_VERIFICATION and not user.is_verified
+    ):
         raise ApplicationError(401, "Invalid account")
-    return {"access_token": create_access_token(user.id),
-            "refresh_token": create_refresh_token(user.id), "token_type": "bearer"}
+    return {
+        "access_token": create_access_token(user.id),
+        "refresh_token": create_refresh_token(user.id),
+        "token_type": "bearer",
+    }

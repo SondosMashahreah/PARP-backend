@@ -1,4 +1,4 @@
-from datetime import datetime
+﻿from datetime import datetime
 from typing import Literal
 from pydantic import BaseModel, Field, EmailStr, model_validator
 from app.schemas.auth import PASSWORD_RE
@@ -49,18 +49,14 @@ class AdminUserCreate(BaseModel):
     email: EmailStr
     role: str
     password: str = Field(min_length=10, max_length=72)
-    username: str | None = Field(default=None, pattern=r"^[a-zA-Z0-9_.-]{3,80}$")
-    conference_id: int | None = None
 
     @model_validator(mode="after")
     def valid(self):
         self.role = validate_role(self.role)
+        if self.role == "organizing_committee":
+            raise ValueError("Create organizing committee accounts separately")
         if not PASSWORD_RE.fullmatch(self.password):
             raise ValueError("Use uppercase, lowercase, number and symbol")
-        if self.role == "organizing_committee" and (
-            not self.username or not self.conference_id
-        ):
-            raise ValueError("Username and conference are required")
         return self
 
 
@@ -79,6 +75,6 @@ class PasswordChange(BaseModel):
         return self
 
 
-class CommitteeSetup(PasswordChange):
+class CommitteeAccountCreate(PasswordChange):
     username: str = Field(pattern=r"^[a-zA-Z0-9_.-]{3,80}$")
     conference_id: int = Field(gt=0)
