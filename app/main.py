@@ -88,3 +88,6 @@ app.include_router(platform_router)
 
 from app.routers.excellence import router as excellence_router
 app.include_router(excellence_router)
+
+from app.routers.news import router as news_router
+app.include_router(news_router)

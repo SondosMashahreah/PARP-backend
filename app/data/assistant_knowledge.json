@@ -1,0 +1,611 @@
+[
+  {
+    "id": "guide",
+    "path": "/guide",
+    "guidance": true,
+    "source": "src/pages/Guide/GuidePage.content.js",
+    "content_type": "Informational page copy, not evidence that every advertised feature or example record exists.",
+    "content": {
+      "ar": {
+        "kind": "guide",
+        "eyebrow": "الدليل الفلسطيني",
+        "title": "مرجع موحد للبحث الإجرائي",
+        "description": "دليل تفاعلي ونسخة قابلة للتحميل يساعدان الباحث في فهم البحث الإجرائي وبناء البحث وفق منهجية موحدة وأمثلة من السياق الفلسطيني.",
+        "primary": "تصفح الدليل",
+        "sections": [
+          {
+            "title": "أساسيات البحث",
+            "items": [
+              "طبيعة البحث الإجرائي",
+              "الأخلاقيات",
+              "اختيار المشكلة",
+              "صياغة السؤال والأهداف"
+            ]
+          },
+          {
+            "title": "التصميم والتنفيذ",
+            "items": [
+              "تصميم التدخل",
+              "أدوات جمع البيانات",
+              "تحليل النتائج",
+              "التأمل والتوصيات"
+            ]
+          },
+          {
+            "title": "مواد مساندة",
+            "items": [
+              "أمثلة فلسطينية",
+              "فيديوهات",
+              "أسئلة شائعة",
+              "تحديثات"
+            ]
+          },
+          {
+            "title": "صيغ الوصول",
+            "items": [
+              "نسخة تفاعلية",
+              "PDF",
+              "أمثلة تطبيقية"
+            ]
+          }
+        ]
+      },
+      "en": {
+        "kind": "guide",
+        "eyebrow": "Palestinian Guide",
+        "title": "A unified reference for action research",
+        "description": "An interactive guide and downloadable edition that help researchers understand action research and build studies through a shared methodology and examples from the Palestinian context.",
+        "primary": "Browse the guide",
+        "sections": [
+          {
+            "title": "Research foundations",
+            "items": [
+              "Nature of action research",
+              "Ethics",
+              "Choosing the problem",
+              "Formulating the question and objectives"
+            ]
+          },
+          {
+            "title": "Design and implementation",
+            "items": [
+              "Intervention design",
+              "Data collection tools",
+              "Results analysis",
+              "Reflection and recommendations"
+            ]
+          },
+          {
+            "title": "Supporting materials",
+            "items": [
+              "Palestinian examples",
+              "Videos",
+              "Frequently asked questions",
+              "Updates"
+            ]
+          },
+          {
+            "title": "Access formats",
+            "items": [
+              "Interactive version",
+              "PDF",
+              "Applied examples"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "template",
+    "path": "/template",
+    "guidance": true,
+    "source": "src/pages/Template/TemplatePage.content.js",
+    "content_type": "Informational page copy, not evidence that every advertised feature or example record exists.",
+    "content": {
+      "ar": {
+        "kind": "template",
+        "eyebrow": "القالب الفلسطيني",
+        "title": "ابنِ بحثك خطوة بخطوة",
+        "description": "قالب موحد يساعد الباحث على استكمال عناصر البحث وإخراجه بصيغة تسهّل التحكيم والنشر دون أن يستبدل الحكم العلمي على المحتوى.",
+        "primary": "ابدأ القالب",
+        "sections": [
+          {
+            "title": "بيانات البداية",
+            "items": [
+              "بيانات الباحث والجهة",
+              "العنوان والكلمات المفتاحية",
+              "المشكلة والسياق",
+              "السؤال والأهداف"
+            ]
+          },
+          {
+            "title": "خطة البحث",
+            "items": [
+              "الفئة المستهدفة",
+              "التدخل والخطة الإجرائية",
+              "أدوات جمع البيانات"
+            ]
+          },
+          {
+            "title": "المخرجات",
+            "items": [
+              "النتائج والتحليل",
+              "التأمل المهني",
+              "التوصيات",
+              "المراجع والملحقات"
+            ]
+          },
+          {
+            "title": "أدوات القالب",
+            "items": [
+              "قالب تفاعلي",
+              "منشئ خطوة بخطوة",
+              "أمثلة",
+              "تحقق من الاكتمال",
+              "نسخة Word"
+            ]
+          }
+        ]
+      },
+      "en": {
+        "kind": "template",
+        "eyebrow": "Palestinian Template",
+        "title": "Build your research step by step",
+        "description": "A unified template that helps researchers complete the elements of a study in a format that supports review and publication without replacing scientific judgment.",
+        "primary": "Start the template",
+        "sections": [
+          {
+            "title": "Starting information",
+            "items": [
+              "Researcher and institution data",
+              "Title and keywords",
+              "Problem and context",
+              "Question and objectives"
+            ]
+          },
+          {
+            "title": "Research plan",
+            "items": [
+              "Target group",
+              "Intervention and action plan",
+              "Data collection tools"
+            ]
+          },
+          {
+            "title": "Outputs",
+            "items": [
+              "Results and analysis",
+              "Professional reflection",
+              "Recommendations",
+              "References and appendices"
+            ]
+          },
+          {
+            "title": "Template tools",
+            "items": [
+              "Interactive template",
+              "Step-by-step builder",
+              "Examples",
+              "Completion check",
+              "Word version"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "about",
+    "path": "/about",
+    "guidance": false,
+    "source": "src/pages/About/AboutPage.content.js",
+    "content_type": "Informational page copy, not evidence that every advertised feature or example record exists.",
+    "content": {
+      "ar": {
+        "eyebrow": "عن المنصة",
+        "title": "من الميدان تبدأ المعرفة",
+        "description": "PARP منصة وطنية رقمية متكاملة تدعم دورة البحث الإجرائي من تحديد المشكلة والتدريب وإعداد المقترح، مرورًا بالتحكيم والتنفيذ والنشر، وصولًا إلى تحليل النتائج وتحويلها إلى توصيات قابلة للاستخدام.",
+        "primary": "الرؤية والرسالة",
+        "sections": [
+          {
+            "title": "الرؤية",
+            "body": "أن تكون PARP المرجع الوطني الفلسطيني الأول للبحوث الإجرائية في التعليم، ومنصة رائدة عربيًا في إنتاج المعرفة التربوية التطبيقية وإدارتها وتوظيفها."
+          },
+          {
+            "title": "الرسالة",
+            "body": "تمكين الممارسين التربويين والباحثين من إنتاج بحوث إجرائية عالية الجودة ضمن بيئة موحدة للتدريب والإرشاد والتحكيم والنشر والتحليل."
+          },
+          {
+            "title": "قيم المنصة",
+            "items": [
+              "الأصالة العلمية والأمانة البحثية",
+              "الشفافية والعدالة في التحكيم",
+              "الشمول وسهولة الوصول",
+              "الخصوصية وحماية البيانات",
+              "الشراكة الوطنية والتعلم المتبادل",
+              "الابتكار والتحسين المستمر"
+            ]
+          },
+          {
+            "title": "الأهداف الاستراتيجية",
+            "items": [
+              "مستودع وطني موحد للبحوث الإجرائية",
+              "توحيد المنهجية عبر الدليل والقالب",
+              "إدارة المؤتمر والتحكيم إلكترونيًا",
+              "تدريب وإرشاد مستمران للباحثين",
+              "تحويل البيانات إلى مؤشرات وتقارير وتوصيات"
+            ]
+          }
+        ]
+      },
+      "en": {
+        "eyebrow": "About PARP",
+        "title": "Knowledge starts in the field",
+        "description": "PARP is an integrated national digital platform that supports the full action-research cycle: identifying a problem, training, preparing a proposal, review, implementation, publication, analysis, and turning findings into usable recommendations.",
+        "primary": "Vision and mission",
+        "sections": [
+          {
+            "title": "Vision",
+            "body": "To make PARP the leading Palestinian national reference for action research in education and a leading Arab platform for producing, managing, and applying practice-based educational knowledge."
+          },
+          {
+            "title": "Mission",
+            "body": "To empower education practitioners and researchers to produce high-quality action research through one environment for training, mentoring, review, publication, and analysis."
+          },
+          {
+            "title": "Platform values",
+            "items": [
+              "Scientific rigor and research integrity",
+              "Transparency and fairness in review",
+              "Inclusion and accessibility",
+              "Privacy and data protection",
+              "National partnership and mutual learning",
+              "Innovation and continuous improvement"
+            ]
+          },
+          {
+            "title": "Strategic goals",
+            "items": [
+              "A unified national repository for action research",
+              "A shared methodology through the guide and template",
+              "Digital conference and review management",
+              "Continuous training and mentoring for researchers",
+              "Turning data into indicators, reports, and recommendations"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "training",
+    "path": "/training",
+    "guidance": false,
+    "source": "src/pages/Training/TrainingPage.content.js",
+    "content_type": "Informational page copy, not evidence that every advertised feature or example record exists.",
+    "content": {
+      "ar": {
+        "eyebrow": "مركز التدريب",
+        "title": "تعلّم مستمر يدعم رحلة الباحث",
+        "description": "مسارات تعلم ذاتي وتدريب مباشر وتقييم وشهادات، مع سجل تقدم يرتبط بدور المستخدم وتخصصه.",
+        "primary": "استكشف التدريب",
+        "sections": [
+          {
+            "title": "المساقات",
+            "items": [
+              "تعلم ذاتي",
+              "مسارات حسب الدور",
+              "اختبارات",
+              "سجل تقدم"
+            ]
+          },
+          {
+            "title": "التدريب المباشر",
+            "items": [
+              "ورش",
+              "لقاءات مباشرة",
+              "إرشاد",
+              "مجموعات موضوعية"
+            ]
+          },
+          {
+            "title": "التقييم",
+            "items": [
+              "اختبارات قبلية وبعدية",
+              "متابعة الإكمال",
+              "قياس التحسن"
+            ]
+          },
+          {
+            "title": "الشهادات",
+            "items": [
+              "شهادات رقمية",
+              "سجل إنجاز",
+              "ربط الشهادة بالملف البحثي"
+            ]
+          }
+        ]
+      },
+      "en": {
+        "eyebrow": "Training Center",
+        "title": "Continuous learning for every researcher",
+        "description": "Self-paced pathways, live training, assessment, and certificates, with progress records linked to each user role and specialization.",
+        "primary": "Explore training",
+        "sections": [
+          {
+            "title": "Courses",
+            "items": [
+              "Self-paced learning",
+              "Role-based pathways",
+              "Assessments",
+              "Progress record"
+            ]
+          },
+          {
+            "title": "Live training",
+            "items": [
+              "Workshops",
+              "Live sessions",
+              "Mentoring",
+              "Topic groups"
+            ]
+          },
+          {
+            "title": "Assessment",
+            "items": [
+              "Pre- and post-assessments",
+              "Completion tracking",
+              "Measuring improvement"
+            ]
+          },
+          {
+            "title": "Certificates",
+            "items": [
+              "Digital certificates",
+              "Achievement record",
+              "Linking certificates to the research profile"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "library",
+    "path": "/library",
+    "guidance": false,
+    "source": "src/pages/Library/LibraryPage.content.js",
+    "content_type": "Informational page copy, not evidence that every advertised feature or example record exists.",
+    "content": {
+      "ar": {
+        "eyebrow": "المكتبة الرقمية",
+        "title": "موارد موثوقة للباحث والممارس",
+        "description": "مكتبة تجمع الكتب والأدلة والمقالات والعروض والتسجيلات والروابط الموثوقة المرتبطة بالبحث الإجرائي.",
+        "primary": "تصفح المكتبة",
+        "sections": [
+          {
+            "title": "مصادر مكتوبة",
+            "items": [
+              "كتب",
+              "أدلة",
+              "مقالات",
+              "عروض"
+            ]
+          },
+          {
+            "title": "وسائط",
+            "items": [
+              "تسجيلات",
+              "فيديوهات",
+              "مواد تدريبية"
+            ]
+          },
+          {
+            "title": "روابط موثوقة",
+            "body": "روابط منتقاة ومرتبطة مباشرة بموضوعات البحث الإجرائي والممارسة التربوية."
+          },
+          {
+            "title": "ربط المعرفة",
+            "body": "ربط الموارد بالدليل والتدريب والبحوث ذات الصلة لسهولة الوصول وإعادة الاستخدام."
+          }
+        ]
+      },
+      "en": {
+        "eyebrow": "Digital Library",
+        "title": "Trusted resources for researchers and practitioners",
+        "description": "A library bringing together books, guides, articles, presentations, recordings, and trusted links related to action research.",
+        "primary": "Browse the library",
+        "sections": [
+          {
+            "title": "Written resources",
+            "items": [
+              "Books",
+              "Guides",
+              "Articles",
+              "Presentations"
+            ]
+          },
+          {
+            "title": "Media",
+            "items": [
+              "Recordings",
+              "Videos",
+              "Training materials"
+            ]
+          },
+          {
+            "title": "Trusted links",
+            "body": "Curated links connected directly to action-research topics and educational practice."
+          },
+          {
+            "title": "Connected knowledge",
+            "body": "Resources are linked with the guide, training, and related research for easier access and reuse."
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "support",
+    "path": "/support",
+    "guidance": false,
+    "source": "src/pages/Support/SupportPage.content.js",
+    "content_type": "Informational page copy, not evidence that every advertised feature or example record exists.",
+    "content": {
+      "ar": {
+        "kind": "support",
+        "eyebrow": "الدعم الفني",
+        "title": "مساندة واضحة عند كل خطوة",
+        "description": "قاعدة معرفة وأسئلة شائعة وقنوات اتصال وتذاكر دعم مع إمكانية تتبع الطلبات.",
+        "primary": "اطلب المساعدة",
+        "sections": [
+          {
+            "title": "قاعدة المعرفة",
+            "body": "إرشادات عملية للاستخدام وحلول للأسئلة المتكررة."
+          },
+          {
+            "title": "الأسئلة الشائعة",
+            "body": "إجابات مختصرة على أكثر الأسئلة شيوعًا حول الحسابات والبحوث والخدمات."
+          },
+          {
+            "title": "تذاكر الدعم",
+            "items": [
+              "إنشاء طلب",
+              "تتبع الحالة",
+              "متابعة الرد"
+            ]
+          },
+          {
+            "title": "قنوات الاتصال",
+            "body": "مسارات واضحة للتواصل مع فريق المنصة بحسب نوع الحاجة."
+          }
+        ]
+      },
+      "en": {
+        "kind": "support",
+        "eyebrow": "Technical Support",
+        "title": "Clear support at every step",
+        "description": "A knowledge base, frequently asked questions, contact channels, and support tickets with request tracking.",
+        "primary": "Get help",
+        "sections": [
+          {
+            "title": "Knowledge base",
+            "body": "Practical guidance for using the platform and solutions to common questions."
+          },
+          {
+            "title": "Frequently asked questions",
+            "body": "Short answers to common questions about accounts, research, and services."
+          },
+          {
+            "title": "Support tickets",
+            "items": [
+              "Create a request",
+              "Track status",
+              "Follow the response"
+            ]
+          },
+          {
+            "title": "Contact channels",
+            "body": "Clear routes for contacting the platform team based on the type of support needed."
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "actual-guide-and-template",
+    "path": "/guide",
+    "guidance": true,
+    "source": "src/features/platform/data/platformContent.js + platformContent.en.js",
+    "guide_ar": [
+      [
+        "طبيعة البحث الإجرائي وأخلاقياته",
+        "مدخل عملي لفهم البحث الإجرائي، دوره، وحدوده الأخلاقية."
+      ],
+      [
+        "المشكلة والسؤال والأهداف",
+        "تحويل ملاحظة من الميدان إلى مشكلة بحثية وسؤال قابل للتقصّي."
+      ],
+      [
+        "التدخل وأدوات جمع البيانات",
+        "تصميم التدخل واختيار الأدوات الملائمة لجمع الأدلة."
+      ],
+      [
+        "النتائج والتأمل",
+        "تنظيم البيانات وتحليلها وربطها بالتغيير في الممارسة."
+      ],
+      [
+        "التوصيات والكتابة والنشر",
+        "صياغة توصيات قابلة للاستخدام وإخراج البحث بصورة موحدة."
+      ]
+    ],
+    "guide_en": [
+      [
+        "The nature and ethics of action research",
+        "A practical introduction to action research, its role, and its ethical boundaries."
+      ],
+      [
+        "Problem, question, and objectives",
+        "Turn a field observation into a research problem and an investigable question."
+      ],
+      [
+        "Intervention and data collection tools",
+        "Design the intervention and choose appropriate tools for gathering evidence."
+      ],
+      [
+        "Findings and reflection",
+        "Organize and analyze data, then connect the findings with changes in practice."
+      ],
+      [
+        "Recommendations, writing, and publication",
+        "Write usable recommendations and prepare the research in a consistent format."
+      ]
+    ],
+    "template_ar": [
+      "بيانات الباحث والجهة",
+      "عنوان البحث والكلمات المفتاحية",
+      "المشكلة والسياق",
+      "السؤال والأهداف",
+      "الفئة المستهدفة",
+      "التدخل والخطة الإجرائية",
+      "أدوات جمع البيانات",
+      "النتائج والتحليل",
+      "التأمل المهني",
+      "التوصيات",
+      "المراجع",
+      "الملحقات والأخلاقيات"
+    ],
+    "template_en": [
+      "Researcher and institution information",
+      "Research title and keywords",
+      "Problem and context",
+      "Question and objectives",
+      "Target group",
+      "Intervention and action plan",
+      "Data collection tools",
+      "Findings and analysis",
+      "Professional reflection",
+      "Recommendations",
+      "References",
+      "Appendices and ethics"
+    ],
+    "official_numeric_rubric": false,
+    "evaluation_method": "Advisory only: for each template element, cite evidence from the available text, identify missing evidence and suggest an actionable revision. Do not invent numeric scores, official weights or acceptance thresholds. Do not mistake completeness for scientific quality."
+  },
+  {
+    "id": "current-workflows",
+    "path": "/assistant",
+    "guidance": true,
+    "content": {
+      "research": "Draft -> submit with file -> committee review -> revisions or acceptance -> offline payment request -> admin confirms payment even if zero -> researcher publishes. Electronic payment is disabled.",
+      "practice": "Draft -> review -> acceptance -> researcher publishes free; public reading is free.",
+      "schools": "Registration means a distinct school with an active teacher/researcher or school manager and approved affiliation. Map catalog entries are not registrations.",
+      "excellence": "Admin creates card, selects published research and conference, uploads portrait and enables visibility. Card opens public researcher profile. Hidden cards and unpublished research are not public.",
+      "conference": "Scientific committee creates conferences, reviews participations and sends internal notices. Organizing committee is limited to its assigned conference.",
+      "writing": "Submission requires title, research field, problem, abstract (each at least two characters) and PDF/Word file up to 25MB. Draft saves preserve text only. Supervisor role has been removed.",
+      "news": "News is live in /api/news. Guests and all roles can read published news and full details at /news?article=ID. Use read_platform dataset news for current records and totals. Only system_admin can create, upload an image, publish, edit, unpublish or delete news through Dashboard > News. Drafts are private. An image, title and body are required to publish.",
+      "limitations": "No official numeric review rubric is configured. Public repository shows research abstracts; full research files are not free by default. The assistant cannot read uploaded document bytes, execute platform mutations, or treat illustrative frontend statistics as live records."
+    }
+  }
+]
