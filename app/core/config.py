@@ -32,6 +32,11 @@ class Settings(BaseSettings):
     MAIL_FROM: str = "no-reply@parp.local"
     MAIL_STARTTLS: bool = False
 
+    STORAGE_BACKEND: str = "minio"
+    SUPABASE_URL: str = ""
+    SUPABASE_SECRET_KEY: str = ""
+    SUPABASE_STORAGE_BUCKET: str = "parp-profile-images"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
