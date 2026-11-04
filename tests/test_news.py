@@ -82,6 +82,29 @@ class NewsTests(unittest.TestCase):
         self.assertEqual(self.client.delete(f'/api/news/admin/{id}').status_code, 200)
         self.news_delete.assert_called()
         self.assertEqual(self.client.get(f'/api/news/{id}').status_code, 404)
+    def test_gallery_preserves_first_cover_and_deletes_only_extra_images(self):
+        article_id = self.create()
+        cover = self.client.post(f'/api/news/admin/{article_id}/images', files={'file': ('first.png', self.png(), 'image/png')})
+        self.assertEqual(cover.status_code, 200, cover.text)
+        self.assertEqual(len(cover.json()['images']), 1)
+        self.assertTrue(cover.json()['images'][0]['is_cover'])
+        additional = []
+        for _ in range(3):
+            response = self.client.post(f'/api/news/admin/{article_id}/images', files={'file': ('extra.png', self.png(), 'image/png')})
+            self.assertEqual(response.status_code, 200, response.text)
+            additional.append(response.json()['images'][-1]['id'])
+        detail = self.client.get(f'/api/news/admin/{article_id}').json()
+        self.assertEqual(len(detail['images']), 4)
+        self.assertEqual([item['id'] for item in detail['images'][1:]], additional)
+        self.assertEqual(self.client.put(f'/api/news/admin/{article_id}', json=self.payload(published=True)).status_code, 200)
+        app.dependency_overrides.pop(get_current_user)
+        self.assertEqual(len(self.client.get(f'/api/news/{article_id}').json()['images']), 4)
+        self.assertEqual(self.client.get('/api/news').json()['items'][0]['image_url'], detail['image_url'])
+        app.dependency_overrides[get_current_user] = lambda: self.admin
+        self.assertEqual(self.client.delete(f'/api/news/admin/{article_id}/images/{additional[1]}').status_code, 200)
+        self.assertEqual(len(self.client.get(f'/api/news/admin/{article_id}').json()['images']), 3)
+        self.assertEqual(self.client.delete(f'/api/news/admin/{article_id}/images/999999').status_code, 404)
+
     def test_assistant_has_live_counts_and_respects_draft_scope(self):
         id = self.create()
         self.assertEqual(read_platform(self.db, None, {'dataset':'news','visibility':'workspace'})[0]['total'], 0)

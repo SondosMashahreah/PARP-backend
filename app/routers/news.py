@@ -35,6 +35,14 @@ def update(article_id: int, data: NewsWrite, db: Session = Depends(get_db), user
 async def image(article_id: int, file: UploadFile = File(...), db: Session = Depends(get_db), user=Depends(administrator)):
     return service.set_image(db, user, article_id, await file.read(service.MAX_IMAGE_BYTES + 1))
 
+@router.post('/admin/{article_id}/images')
+async def add_image(article_id: int, file: UploadFile = File(...), db: Session = Depends(get_db), user=Depends(administrator)):
+    return service.add_image(db, user, article_id, await file.read(service.MAX_IMAGE_BYTES + 1))
+
+@router.delete('/admin/{article_id}/images/{image_id}')
+def remove_image(article_id: int, image_id: int, db: Session = Depends(get_db), user=Depends(administrator)):
+    return service.remove_image(db, user, article_id, image_id)
+
 @router.delete('/admin/{article_id}')
 def delete(article_id: int, db: Session = Depends(get_db), user=Depends(administrator)):
     return service.delete(db, user, article_id)

@@ -126,6 +126,19 @@ def summary(db: Session, actor: User) -> dict:
             "governorates": _count(db, Governorate),
             "directorates": _count(db, Directorate),
             "schools": _count(db, School),
+            # Distinct institutional IDs from published *research* only; not all registered institutions.
+            "published_directorates": int(db.scalar(select(func.count(func.distinct(ResearchSubmission.directorate_id))).where(
+                ResearchSubmission.status == "published",
+                ResearchSubmission.publication_type == "research",
+                ResearchSubmission.directorate_id.is_not(None),
+                ResearchSubmission.directorate_id != "",
+            )) or 0),
+            "published_schools": int(db.scalar(select(func.count(func.distinct(ResearchSubmission.school_id))).where(
+                ResearchSubmission.status == "published",
+                ResearchSubmission.publication_type == "research",
+                ResearchSubmission.school_id.is_not(None),
+                ResearchSubmission.school_id != "",
+            )) or 0),
             "schools_with_coordinates": _count(db, School, School.latitude.is_not(None), School.longitude.is_not(None)),
         },
         "pending_affiliations": _pending_affiliations(db),

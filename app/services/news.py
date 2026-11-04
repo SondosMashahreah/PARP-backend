@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from uuid import uuid4
 from sqlalchemy import select, func, or_
-from app.models.news import NewsArticle
+from app.models.news import NewsArticle, NewsImage
 from app.domain.errors import ApplicationError
 from app.services.workflow import ensure_role
 from app.services.excellence import sanitize_image, MAX_IMAGE_BYTES
@@ -30,6 +30,16 @@ def serialize(row, full=False, private=False):
         value = getattr(row, k)
         data[k] = value.replace(tzinfo=timezone.utc).isoformat() if value else None
     data['image_url'] = presigned_avatar_url(row.image_object)
+    if full:
+        images = []
+        if row.image_object:
+            images.append({'id': 'cover', 'url': data['image_url'], 'alt': row.image_alt or row.title, 'is_cover': True})
+        images.extend(
+            {'id': image.id, 'url': presigned_avatar_url(image.object_name),
+             'alt': row.image_alt or row.title, 'is_cover': False}
+            for image in row.gallery_images
+        )
+        data['images'] = images
     return data
 
 
@@ -81,11 +91,50 @@ def set_image(db, user, article_id, data):
     return serialize(row, full=True, private=True)
 
 
+def add_image(db, user, article_id, data):
+    """Append an additional photo, or use the first photo as the cover."""
+    admin(user)
+    row = get_article(db, article_id, False)
+    if not row.image_object:
+        return set_image(db, user, article_id, data)
+    clean = sanitize_image(data)
+    name = f'news/{article_id}/{uuid4().hex}.webp'
+    try:
+        _upload(name, clean, 'image/webp')
+    except Exception:
+        raise ApplicationError(503, 'Image storage is unavailable; please retry')
+    try:
+        db.add(NewsImage(article_id=article_id, object_name=name))
+        db.commit()
+    except Exception:
+        db.rollback()
+        delete_object(name)
+        raise
+    return serialize(row, full=True, private=True)
+
+
+def remove_image(db, user, article_id, image_id):
+    """Remove an additional image; replace the cover through the existing /image route."""
+    admin(user)
+    row = get_article(db, article_id, False)
+    image = db.get(NewsImage, image_id)
+    if not image or image.article_id != row.id:
+        raise ApplicationError(404, 'News image not found')
+    name = image.object_name
+    db.delete(image)
+    db.commit()
+    delete_object(name)
+    return serialize(row, full=True, private=True)
+
+
+
+
 def delete(db, user, article_id):
     admin(user)
     row = get_article(db, article_id, False)
-    image = row.image_object
+    images = [row.image_object] + [image.object_name for image in row.gallery_images]
     db.delete(row)
     db.commit()
-    delete_object(image)
+    for image in images:
+        delete_object(image)
     return {'deleted': True}
