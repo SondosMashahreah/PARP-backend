@@ -10,6 +10,7 @@ from sqlalchemy import text
 from app.core.config import settings
 from app.core.database import Base, engine
 from app.models.user import User  # noqa: F401 - registers the table metadata
+from app.models.notification import Notification  # noqa: F401 - registers the inbox table
 from app.models.education import Directorate, EducationSource, Governorate, School  # noqa: F401
 from app.models.workflow import (  # noqa: F401
     ProblemRecord,
@@ -27,6 +28,7 @@ from app.routers.profile import router as profile_router
 from app.routers.education import router as education_router
 from app.routers.workflow import router as workflow_router
 from app.routers.researcher import router as researcher_router
+from app.routers.notifications import router as notifications_router
 
 
 @asynccontextmanager
@@ -60,6 +62,7 @@ app.include_router(auth_router)
 app.include_router(profile_router)
 app.include_router(workflow_router)
 app.include_router(researcher_router)
+app.include_router(notifications_router)
 
 
 @app.get("/")
