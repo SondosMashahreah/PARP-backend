@@ -1,18 +1,14 @@
-from io import BytesIO
-import warnings
 from uuid import uuid4
-from PIL import Image, ImageOps, UnidentifiedImageError
 from sqlalchemy import select, or_, func, extract
 from sqlalchemy.exc import IntegrityError
 from app.domain.errors import ApplicationError
+from app.domain.image_processing import sanitize_image, MAX_IMAGE_BYTES
 from app.models.excellence import ExcellenceEntry
 from app.models.platform import Conference
 from app.models.workflow import ResearchSubmission, UserAffiliation
 from app.models.education import School, Directorate
 from app.infrastructure.minio_storage import _upload, delete_object, presigned_avatar_url
 from app.services.workflow import ensure_role
-
-MAX_IMAGE_BYTES = 5 * 1024 * 1024
 
 def admin(user):
     ensure_role(user, 'system_admin')
@@ -90,23 +86,6 @@ def write(db, user, data, entry_id=None):
     db.refresh(row)
     return serialize(row, research, conference)
 
-def sanitize_image(data):
-    if not data or len(data) > MAX_IMAGE_BYTES:
-        raise ApplicationError(422, 'Use a PNG, JPEG or WebP image up to 5 MB')
-    try:
-        with warnings.catch_warnings():
-            warnings.simplefilter('error', Image.DecompressionBombWarning)
-            with Image.open(BytesIO(data)) as image:
-                if image.format not in {'PNG', 'JPEG', 'WEBP'} or image.width * image.height > 16000000:
-                    raise ValueError('Invalid image')
-                image.load()
-                image = ImageOps.exif_transpose(image).convert('RGBA')
-                image.thumbnail((1200, 1200))
-                output = BytesIO()
-                image.save(output, 'WEBP', quality=90)
-                return output.getvalue()
-    except (UnidentifiedImageError, ValueError, OSError, Image.DecompressionBombError, Image.DecompressionBombWarning):
-        raise ApplicationError(422, 'Image is invalid or too large to decode')
 
 def set_image(db, user, entry_id, data):
     admin(user)

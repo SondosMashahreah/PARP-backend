@@ -1,3 +1,4 @@
+import base64
 from fastapi import APIRouter, Depends, File, UploadFile, Query
 from sqlalchemy.orm import Session
 from app.core.database import get_db
@@ -30,6 +31,13 @@ def create(data: NewsWrite, db: Session = Depends(get_db), user=Depends(administ
 @router.put('/admin/{article_id}')
 def update(article_id: int, data: NewsWrite, db: Session = Depends(get_db), user=Depends(administrator)):
     return service.write(db, user, data, article_id)
+
+@router.post('/admin/images/preview')
+async def preview_image(file: UploadFile = File(...), user=Depends(administrator)):
+    # Memory-only preview: never create an article or save an object.
+    from app.domain.image_processing import sanitize_image
+    image_bytes = sanitize_image(await file.read(service.MAX_IMAGE_BYTES + 1))
+    return {"content_type": "image/webp", "image_base64": base64.b64encode(image_bytes).decode("ascii")}
 
 @router.post('/admin/{article_id}/image')
 async def image(article_id: int, file: UploadFile = File(...), db: Session = Depends(get_db), user=Depends(administrator)):

@@ -4,7 +4,7 @@ from sqlalchemy import select, func, or_
 from app.models.news import NewsArticle, NewsImage
 from app.domain.errors import ApplicationError
 from app.services.workflow import ensure_role
-from app.services.excellence import sanitize_image, MAX_IMAGE_BYTES
+from app.domain.image_processing import sanitize_image, MAX_IMAGE_BYTES
 from app.infrastructure.minio_storage import _upload, delete_object, presigned_avatar_url
 
 

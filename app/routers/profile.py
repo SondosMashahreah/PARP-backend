@@ -18,7 +18,7 @@ async def update_avatar(file: UploadFile = File(...), current_user: User = Depen
     # Preserve content-type validation before reading the request body.
     if (file.content_type or "") not in profile.ALLOWED_TYPES:
         from app.domain.errors import ApplicationError
-        raise ApplicationError(400, "Only JPG, PNG and WEBP images are allowed")
+        raise ApplicationError(400, "Unsupported image type")
     data = await file.read(profile.MAX_AVATAR_BYTES + 1)
     return profile.update_avatar(db, current_user, data, file.content_type)
 
