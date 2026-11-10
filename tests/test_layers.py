@@ -55,7 +55,8 @@ class LayerRegressionTests(unittest.TestCase):
             auth.refresh_tokens(self.db, 'invalid')
 
     def test_resend_does_not_leak_account_state(self):
-        with patch('app.services.auth.issue_otp') as issue:
+        # Resend is intentionally disabled in some deployments. Enable it for this test.
+        with patch.object(auth.settings, 'AUTH_REQUIRE_EMAIL_VERIFICATION', True), patch('app.services.auth.issue_otp') as issue:
             missing = auth.resend_verification(self.db, 'missing@example.test')
             verified = auth.resend_verification(self.db, self.user.email)
             issue.assert_not_called()

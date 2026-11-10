@@ -48,10 +48,13 @@ class EducationTests(unittest.TestCase):
             for endpoint in ('catalog', 'boundaries', 'schools', 'schools/points?bbox=34,29,37,34'):
                 self.assertEqual(anonymous.get('/api/education/' + endpoint).status_code, 401)
             self.assertEqual(anonymous.get('/api/education/catalog', headers={'Authorization': 'Bearer invalid'}).status_code, 401)
+            # Test actual HTTP registration, not internal FastAPI route wrappers.
+            # These malformed requests must be rejected by validation (422),
+            # not by routing (404). No user records are created.
+            for endpoint in ('/auth/login', '/auth/register', '/auth/refresh'):
+                self.assertEqual(anonymous.post(endpoint, json={}).status_code, 422)
         finally:
             anonymous.close()
-        paths = {route.path for route in app.routes}
-        self.assertTrue({'/auth/login', '/auth/register', '/auth/refresh'}.issubset(paths))
 
     def test_catalog_and_real_boundaries(self):
         data = self.client.get('/api/education/catalog').json()

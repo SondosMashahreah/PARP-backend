@@ -1,5 +1,6 @@
 import json
 from sqlalchemy import select
+from app.domain.action_research import validate_standard_submission
 from app.domain.errors import ApplicationError
 from app.domain.roles import RESEARCHER, ORGANIZING_COMMITTEE, SYSTEM_ADMIN
 from app.models.user import User
@@ -56,6 +57,7 @@ def submit_draft(db, user, draft_id, revision, filename, content_type, data):
     content = row.content
     if any(len(content.get(key, '').strip()) < 2 for key in ('title', 'research_field', 'problem', 'abstract')):
         raise ApplicationError(422, 'Title, research field, problem and abstract are required before submission')
+    validate_standard_submission(content)
     if not data:
         raise ApplicationError(422, 'Research file is empty')
     form = {**content, 'keywords': [s.strip() for s in content.get('keywords', '').split(',') if s.strip()]}

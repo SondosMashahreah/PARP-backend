@@ -207,6 +207,15 @@ def create_submission(
     form_data = _parse_form_json(form_json)
     kind = form_data.get('kind', 'research')
     if kind not in ('research', 'practice'): raise ApplicationError(422, 'Invalid submission kind')
+    if form_data.get('standard_version') == 'ARDS-1.0':
+        from app.schemas.researcher import DraftContent
+        from app.domain.action_research import validate_standard_submission
+        from pydantic import ValidationError
+        try:
+            form_data = DraftContent.model_validate(form_data).model_dump()
+        except ValidationError as exc:
+            raise ApplicationError(422, 'Invalid ARDS research metadata') from exc
+        validate_standard_submission(form_data)
     if not (abstract or form_data.get('abstract') or '').strip(): raise ApplicationError(422, 'An abstract is required')
     submission = ResearchSubmission(
         publication_type=kind,
@@ -279,11 +288,24 @@ def resubmit(
         raise ApplicationError(413, "Research file must be 25 MB or smaller")
     extension = _research_extension(content_type, file_name)
     next_version = submission.current_version + 1
-    form_data = _parse_form_json(form_json)
+    incoming_data = _parse_form_json(form_json)
+    previous = latest_version(db, submission)
+    previous_data = previous.form_data if previous and isinstance(previous.form_data, dict) else {}
+    # Partial legacy revisions must not erase ARDS metadata or co-author affiliations.
+    form_data = {**previous_data, **incoming_data}
     from app.schemas.researcher import DraftContent
+    from app.domain.action_research import validate_standard_submission
     from pydantic import ValidationError
-    allowed = set(DraftContent.model_fields) - {"keywords"}
-    edits = {key: value for key, value in form_data.items() if key in allowed}
+    if form_data.get('standard_version') == 'ARDS-1.0':
+        try:
+            form_data = DraftContent.model_validate(form_data).model_dump()
+        except ValidationError as exc:
+            raise ApplicationError(422, 'Invalid ARDS research metadata') from exc
+        validate_standard_submission(form_data)
+    # Only ORM columns may be set directly. Extended fields stay in ResearchVersion.form_data.
+    columns = {'title', 'title_en', 'research_field', 'problem', 'abstract',
+               'research_question', 'intervention', 'results', 'recommendations'}
+    edits = {key: value for key, value in incoming_data.items() if key in columns}
     try:
         validated = DraftContent(**edits)
     except ValidationError as exc:
@@ -293,7 +315,7 @@ def resubmit(
             raise ApplicationError(422, "Title, field and problem cannot be empty")
     for key in edits:
         setattr(submission, key, getattr(validated, key))
-    if "keywords" in form_data:
+    if "keywords" in incoming_data:
         submission.keywords = _read_keywords(form_data)
 
     object_name = upload_research_file(
@@ -509,6 +531,7 @@ def latest_version(db: Session, submission: ResearchSubmission) -> ResearchVersi
 def serialize_submission(db: Session, submission: ResearchSubmission, viewer: User | None = None) -> dict:
     author = db.get(User, submission.researcher_id)
     version = latest_version(db, submission)
+    standard_data = version.form_data if version and isinstance(version.form_data, dict) else {}
     events = db.scalars(
         select(WorkflowEvent)
         .where(WorkflowEvent.submission_id == submission.id)
@@ -531,6 +554,14 @@ def serialize_submission(db: Session, submission: ResearchSubmission, viewer: Us
         "id": submission.id,
         "researcher_id": submission.researcher_id,
         "researcher_name": author.full_name if author else None,
+        # Public authorship is visible only after publication. Full metadata is private.
+        "standard_version": standard_data.get("standard_version"),
+        "researchers": standard_data.get("researchers", []) if private or submission.status == "published" else [],
+        "standard_data": standard_data if private else None,
+        "subject_area": standard_data.get("subject_area") if private or submission.status == "published" else None,
+        "target_grades": standard_data.get("target_grades", []) if private or submission.status == "published" else [],
+        "academic_year": standard_data.get("academic_year") if private or submission.status == "published" else None,
+        "research_language": standard_data.get("research_language") if private or submission.status == "published" else None,
         "governorate_id": submission.governorate_id,
         "directorate_id": submission.directorate_id,
         "school_id": submission.school_id,

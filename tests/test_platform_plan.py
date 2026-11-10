@@ -26,7 +26,7 @@ from app.models.platform import (
     PublicationPayment,
     Conference,
     ConferenceParticipation,
-    CommitteeCredential,
+    CommitteeAccount,
 )
 from app.models.education import School, Directorate
 from app.services import platform, workflow, researcher
@@ -35,9 +35,11 @@ from app.schemas.platform import (
     ConferenceCreate,
     AdminUserCreate,
     CommitteeLogin,
+    CommitteeAccountCreate,
     PasswordChange,
     ParticipationDecision,
 )
+from app.core.security import verify_password
 from app.schemas.researcher import DraftContent
 from app.schemas.workflow import DecisionRequest
 from app.domain.errors import ApplicationError
@@ -398,29 +400,26 @@ class PlatformPlanTests(unittest.TestCase):
         conf = self.conference()
         with self.assertRaises(ValueError):
             validate_role("supervisor")
-        data = AdminUserCreate(
-            full_name="Committee user",
-            email="committee@other.org",
-            password="Temporary1!",
-            role="organizing_committee",
+        # Committee credentials use their own table and endpoint, not AdminUserCreate.
+        data = CommitteeAccountCreate(
             username="committee.member",
+            password="Temporary1!",
             conference_id=conf["id"],
         )
         with self.assertRaises(ApplicationError):
-            platform.create_user(self.db, self.owner, data)
-        result = platform.create_user(self.db, self.admin, data)
+            platform.create_committee_account(self.db, self.owner, data)
+        result = platform.create_committee_account(self.db, self.admin, data)
         logged = platform.committee_login(
             self.db, CommitteeLogin(username="committee.member", password="Temporary1!")
         )
-        self.assertTrue(logged["must_change_password"])
+        self.assertEqual(logged["user"]["role"], "organizing_committee")
+        self.assertFalse(logged["must_change_password"])
+        account = self.db.get(CommitteeAccount, result["id"])
         platform.change_password(
-            self.db,
-            self.db.get(User, result["id"]),
-            PasswordChange(password="UpdatedPass2!"),
+            self.db, account, PasswordChange(password="UpdatedPass2!")
         )
-        self.assertFalse(
-            self.db.get(CommitteeCredential, result["id"]).must_change_password
-        )
+        self.assertTrue(verify_password("UpdatedPass2!", account.password_hash))
+        self.assertFalse(account.must_change_password)
 
     def test_http_map_access(self):
         def session():
