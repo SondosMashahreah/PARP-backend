@@ -764,6 +764,7 @@ def serialize_user_access(db: Session, user: User) -> dict:
         "full_name": user.full_name,
         "email": user.email,
         "role": role_of(user),
+        "full_name_en": user.name_translation.full_name_en if user.name_translation else None,
         "is_active": user.is_active,
         "affiliation": serialize_affiliation(affiliation(db, user.id)),
     }
@@ -771,6 +772,7 @@ def serialize_user_access(db: Session, user: User) -> dict:
 
 def update_user_access(db: Session, actor: User, target_user_id: int, data) -> dict:
     ensure_role(actor, SYSTEM_ADMIN)
+    from app.services.identity import set_english_name
     target = db.get(User, target_user_id)
     if not target:
         raise ApplicationError(404, "User not found")
@@ -791,6 +793,9 @@ def update_user_access(db: Session, actor: User, target_user_id: int, data) -> d
         if school and school.directorate_id is None:
             school.directorate_id = data.directorate_id
     target.role = data.role
+    if data.full_name is not None:
+        target.full_name = ' '.join(data.full_name.split())
+    set_english_name(target, data.full_name_en)
     if data.is_active is not None:
         target.is_active = data.is_active
     row = affiliation(db, target.id) or UserAffiliation(user_id=target.id)

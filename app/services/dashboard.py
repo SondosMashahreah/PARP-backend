@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.domain.roles import ROLE_CAPABILITIES, SYSTEM_ADMIN, normalize_role
 from app.models.education import Directorate, Governorate, School
-from app.models.user import User
+from app.models.user import User, UserNameTranslation
 from app.models.workflow import (
     ProblemRecord,
     RecommendationRecord,
@@ -153,6 +153,7 @@ def _serialize_admin_user(db: Session, user: User) -> dict:
         "full_name": user.full_name,
         "email": user.email,
         "role": normalize_role(user.role),
+        "full_name_en": user.name_translation.full_name_en if user.name_translation else None,
         "is_active": user.is_active,
         "is_verified": user.is_verified,
         "created_at": user.created_at,
@@ -186,6 +187,7 @@ def users(
         statement = statement.where(
             or_(
                 func.lower(User.full_name).like(pattern),
+                User.name_translation.has(func.lower(UserNameTranslation.full_name_en).like(pattern)),
                 func.lower(User.email).like(pattern),
             )
         )

@@ -19,13 +19,17 @@ def normalize_allowed_email(value: str) -> str:
 
 class RegisterRequest(BaseModel):
     full_name: str = Field(min_length=2, max_length=150)
+    full_name_en: str | None = Field(default=None, min_length=2, max_length=150)
+    governorate_id: str | None = Field(default=None, max_length=20)
+    directorate_id: str | None = Field(default=None, max_length=80)
+    school_id: str | None = Field(default=None, max_length=80)
     email: EmailStr
     password: str = Field(min_length=10, max_length=72)
 
-    @field_validator("full_name")
+    @field_validator("full_name", "full_name_en")
     @classmethod
-    def clean_name(cls, value: str) -> str:
-        return " ".join(value.split())
+    def clean_name(cls, value: str | None) -> str | None:
+        return " ".join(value.split()) if value is not None else None
 
     @field_validator("email")
     @classmethod
@@ -85,6 +89,7 @@ class UserResponse(BaseModel):
     id: int
     full_name: str
     email: EmailStr
+    full_name_en: str | None = None
     role: str
     is_verified: bool
     avatar_url: str | None = None

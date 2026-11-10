@@ -2,6 +2,7 @@ from app.domain.errors import ApplicationError
 from app.domain.image_processing import sanitize_image, MAX_IMAGE_BYTES
 from app.repositories import users
 from app.services.auth import user_response
+from app.services.identity import set_english_name
 from app.infrastructure.minio_storage import delete_object, upload_avatar
 
 MAX_AVATAR_BYTES = MAX_IMAGE_BYTES
@@ -18,8 +19,9 @@ ALLOWED_TYPES = {
 
 
 
-def update_profile(db, current_user, full_name):
+def update_profile(db, current_user, full_name, full_name_en=None):
     current_user.full_name = " ".join(full_name.split())
+    set_english_name(current_user, full_name_en)
     users.commit(db)
     users.refresh(db, current_user)
     return user_response(current_user)

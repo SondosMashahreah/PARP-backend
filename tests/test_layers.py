@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import patch
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
-from app.models.user import User
+from app.models.user import User, UserNameTranslation
 from app.core.security import create_refresh_token
 from app.domain.errors import ApplicationError
 from app.services import auth, profile, education
@@ -17,6 +17,7 @@ class LayerRegressionTests(unittest.TestCase):
     def setUp(self):
         self.engine = create_engine('sqlite://')
         User.__table__.create(self.engine)
+        UserNameTranslation.__table__.create(self.engine)
         self.db = Session(self.engine)
         self.user = User(full_name='Test User', email='test@example.test', password_hash='unused', is_active=True, is_verified=True)
         self.db.add(self.user)

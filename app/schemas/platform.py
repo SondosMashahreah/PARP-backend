@@ -46,6 +46,10 @@ class NoticeCreate(BaseModel):
 
 class AdminUserCreate(BaseModel):
     full_name: str = Field(min_length=2, max_length=150)
+    full_name_en: str | None = Field(default=None, min_length=2, max_length=150)
+    governorate_id: str | None = Field(default=None, max_length=20)
+    directorate_id: str | None = Field(default=None, max_length=80)
+    school_id: str | None = Field(default=None, max_length=80)
     email: EmailStr
     role: str
     password: str = Field(min_length=10, max_length=72)

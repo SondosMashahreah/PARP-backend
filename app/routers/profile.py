@@ -11,7 +11,7 @@ router = APIRouter(prefix="/profile", tags=["Profile"])
 
 @router.patch("/me", response_model=UserResponse)
 def update_profile(data: ProfileUpdateRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    return profile.update_profile(db, current_user, data.full_name)
+    return profile.update_profile(db, current_user, data.full_name, data.full_name_en)
 
 @router.post("/avatar", response_model=UserResponse)
 async def update_avatar(file: UploadFile = File(...), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):

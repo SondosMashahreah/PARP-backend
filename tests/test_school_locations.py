@@ -16,7 +16,7 @@ from app.core.database import get_db
 from app.core.security import create_access_token
 from app.main import app
 from app.models.education import Directorate, EducationSource, School
-from app.models.user import User
+from app.models.user import User, UserNameTranslation
 from scripts.import_education import TABLES, import_data
 from scripts.import_school_locations import import_locations, load_bundle, validate_bundle
 
@@ -28,6 +28,7 @@ class SchoolLocationTests(unittest.TestCase):
         cls.engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
         for table in TABLES + [User.__table__]:
             table.create(cls.engine)
+        UserNameTranslation.__table__.create(cls.engine)
         with Session(cls.engine) as db, db.begin():
             import_data(db)
             db.add(User(id=1, full_name="Location test", email="locations@example.test", password_hash="unused", is_active=True, is_verified=True))

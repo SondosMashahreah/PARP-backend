@@ -26,6 +26,7 @@ from app.routers.assistant import router as assistant_router
 from app.routers.auth import router as auth_router
 from app.routers.profile import router as profile_router
 from app.routers.education import router as education_router
+from app.routers.public_education import router as public_education_router
 from app.routers.workflow import router as workflow_router
 from app.routers.researcher import router as researcher_router
 from app.routers.notifications import router as notifications_router
@@ -57,6 +58,7 @@ app.add_middleware(
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 app.include_router(education_router)
+app.include_router(public_education_router)
 app.include_router(assistant_router)
 app.include_router(auth_router)
 app.include_router(profile_router)

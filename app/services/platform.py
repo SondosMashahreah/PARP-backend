@@ -17,6 +17,7 @@ from app.models.platform import (
 from app.models.workflow import ResearchSubmission, UserAffiliation
 from app.models.education import School, Directorate
 from app.models.user import User
+from app.services.identity import set_english_name
 from app.services.workflow import (
     ensure_role,
     affiliation,
@@ -349,6 +350,12 @@ def create_user(db, actor, data):
         select(User.id).where(func.lower(User.email) == str(data.email).lower())
     ):
         raise ApplicationError(409, "Email already exists")
+    from app.services.workflow import _validate_education_ids
+    _validate_education_ids(db, data.governorate_id, data.directorate_id, data.school_id)
+    if data.school_id and not data.directorate_id:
+        raise ApplicationError(422, 'School requires a directorate')
+    if data.role in ('researcher', 'school_manager') and data.directorate_id and not data.school_id:
+        raise ApplicationError(422, 'Choose a school for this role')
     row = User(
         full_name=data.full_name,
         email=str(data.email).lower(),
@@ -358,12 +365,21 @@ def create_user(db, actor, data):
         is_verified=True,
     )
     db.add(row)
+    db.flush()
+    set_english_name(row, data.full_name_en)
+    if data.governorate_id or data.directorate_id or data.school_id:
+        db.add(UserAffiliation(
+            user_id=row.id, governorate_id=data.governorate_id,
+            directorate_id=data.directorate_id, school_id=data.school_id,
+            approval_status='approved', approved_by_id=actor.id,
+            approved_at=datetime.now(timezone.utc),
+        ))
     try:
         db.commit()
     except IntegrityError:
         db.rollback()
         raise ApplicationError(409, "Account already exists")
-    return dict(id=row.id, full_name=row.full_name, role=row.role)
+    return dict(id=row.id, full_name=row.full_name, full_name_en=row.name_translation.full_name_en if row.name_translation else None, role=row.role)
 
 
 def create_committee_account(db, actor, data):

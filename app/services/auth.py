@@ -13,6 +13,8 @@ from app.core.security import (
     verify_password,
 )
 from app.models.user import User
+from app.models.workflow import UserAffiliation
+from app.services.identity import set_english_name
 from app.models.platform import CommitteeAccount
 from app.infrastructure.email import send_otp_email
 from app.services.otp import generate_otp, hash_otp, otp_expiry, verify_otp
@@ -33,6 +35,7 @@ def user_response(user: User | CommitteeAccount) -> dict:
     return {
         "id": user.id,
         "full_name": user.full_name,
+        "full_name_en": user.name_translation.full_name_en if user.name_translation else None,
         "email": user.email,
         "role": normalize_role(user.role),
         "is_verified": user.is_verified or not settings.AUTH_REQUIRE_EMAIL_VERIFICATION,
@@ -62,7 +65,15 @@ def issue_otp(db: Session, user: User) -> None:
         raise ApplicationError(status_code=503, detail="Could not send verification email")
 
 
-def register_user(db: Session, full_name: str, email: str, password: str) -> User:
+def register_user(db: Session, full_name: str, email: str, password: str, *,
+                  full_name_en: str | None = None, governorate_id: str | None = None,
+                  directorate_id: str | None = None, school_id: str | None = None) -> User:
+    # Never accept free-text or mismatched school/directorate identifiers.
+    if governorate_id or directorate_id or school_id:
+        from app.services.workflow import _validate_education_ids
+        _validate_education_ids(db, governorate_id, directorate_id, school_id)
+        if not school_id or not directorate_id:
+            raise ApplicationError(422, 'Choose a school and directorate together')
     user = users.by_email(db, email)
     if user and (user.is_verified or not settings.AUTH_REQUIRE_EMAIL_VERIFICATION):
         raise ApplicationError(status_code=409, detail="Email already registered")
@@ -81,6 +92,17 @@ def register_user(db: Session, full_name: str, email: str, password: str) -> Use
             role=RESEARCHER,
         )
         users.add(db, user)
+
+    set_english_name(user, full_name_en)
+    if school_id and directorate_id:
+        row = db.get(UserAffiliation, user.id) or UserAffiliation(user_id=user.id)
+        db.add(row)
+        row.governorate_id = governorate_id
+        row.directorate_id = directorate_id
+        row.school_id = school_id
+        row.approval_status = 'requested'
+        row.approved_by_id = None
+        row.approved_at = None
 
     if settings.AUTH_REQUIRE_EMAIL_VERIFICATION:
         issue_otp(db, user)

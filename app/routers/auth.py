@@ -30,7 +30,9 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 
 @router.post("/register")
 def register(data: RegisterRequest, db: Session = Depends(get_db)):
-    user = register_user(db, data.full_name, str(data.email), data.password)
+    user = register_user(db, data.full_name, str(data.email), data.password,
+                         full_name_en=data.full_name_en, governorate_id=data.governorate_id,
+                         directorate_id=data.directorate_id, school_id=data.school_id)
     if settings.AUTH_REQUIRE_EMAIL_VERIFICATION:
         return {"message": "Verification code sent"}
     return token_response(user)

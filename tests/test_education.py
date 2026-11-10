@@ -11,7 +11,7 @@ from sqlalchemy.pool import StaticPool
 from app.main import app
 from app.core.database import get_db
 from app.models.education import School, Directorate
-from app.models.user import User
+from app.models.user import User, UserNameTranslation
 from app.core.security import create_access_token
 from app.services.education import normalize_query
 from scripts.import_education import TABLES, import_data
@@ -23,6 +23,7 @@ class EducationTests(unittest.TestCase):
     def setUpClass(cls):
         cls.engine = create_engine('sqlite://', connect_args={'check_same_thread': False}, poolclass=StaticPool)
         User.__table__.create(cls.engine)
+        UserNameTranslation.__table__.create(cls.engine)
         for table in TABLES:
             table.create(cls.engine)
         with Session(cls.engine) as db, db.begin():
