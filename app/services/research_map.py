@@ -1,4 +1,4 @@
-"""Scoped, real research counts for the education-governorate choropleth.
+"""Actual national research counts; directorate managers see published work only.
 
 Each ResearchSubmission is counted exactly once; drafts and practices are excluded.
 No fabricated counts, coordinates or user-identifying details are returned.
@@ -12,9 +12,8 @@ from app.services.workflow import ensure_role, role_of
 def research_governorates(db, user):
     ensure_role(user, "decision_maker", "directorate_manager")
     limited = role_of(user) == "directorate_manager"
-    # Preserve the existing map's institution-level access control: a directorate
-    # manager sees only work submitted from their approved directorate.
-    affiliation = db.get(UserAffiliation, user.id) if limited else None
+    # Countrywide aggregate counts are safe for directorate managers only when
+    # limited to already-published work. Do not expose unpublished other-dir data.
     r = ResearchSubmission
     # Use the submission governorate only when it exists in the canonical
     # education directory. Otherwise fall back to verified school/directorate IDs.
@@ -34,10 +33,7 @@ def research_governorates(db, user):
         .where(r.publication_type == "research")
     )
     if limited:
-        if not affiliation or affiliation.approval_status != "approved" or not affiliation.directorate_id:
-            statement = statement.where(False)
-        else:
-            statement = statement.where(r.directorate_id == affiliation.directorate_id)
+        statement = statement.where(r.status == "published")
     grouped = db.execute(statement.group_by(governorate_id)).all()
     governorates = db.scalars(select(Governorate).order_by(Governorate.name_ar)).all()
     known_ids = {item.id for item in governorates}
@@ -56,7 +52,7 @@ def research_governorates(db, user):
     ]
     return {
         "metric": "registered_research",
-        "scope": "directorate" if limited else "national",
+        "scope": "national_published" if limited else "national",
         "total_research": unassigned + sum(row["research_count"] for row in rows),
         "published_research": unassigned_published + sum(row["published_count"] for row in rows),
         "unassigned_research": unassigned,

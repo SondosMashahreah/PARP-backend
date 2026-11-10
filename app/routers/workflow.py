@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
 from sqlalchemy.orm import Session
+from fastapi.responses import RedirectResponse
+from fastapi import HTTPException
 
 from app.core.database import get_db
 from app.models.user import User
@@ -193,6 +195,17 @@ def my_publications(
 @router.get("/repository")
 def repository(db: Session = Depends(get_db)):
     return workflow.public_repository(db, "research")
+
+
+@router.get("/repository/{submission_id}/file")
+def published_repository_file(submission_id: int, db: Session = Depends(get_db)):
+    # Never accept an item identifier as authorization: service rechecks
+    # publication status and kind for every public download request.
+    try:
+        url = workflow.published_research_file_url(db, submission_id)
+    except RuntimeError as exc:
+        raise HTTPException(503, "Research file storage is temporarily unavailable") from exc
+    return RedirectResponse(url=url, status_code=307)
 
 
 @router.get("/practices")

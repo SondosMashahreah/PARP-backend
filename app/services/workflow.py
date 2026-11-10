@@ -826,6 +826,24 @@ def public_repository(db: Session, publication_type: str = "research") -> list[d
     return [serialize_submission(db, row, None) for row in rows]
 
 
+def published_research_file_url(db: Session, submission_id: int) -> str:
+    """Sign the latest file only for a genuinely published research item.
+
+    A browser opens a fresh short-lived link on demand; drafts, reviewed items,
+    and practices never pass this public reader endpoint.
+    """
+    row = db.get(ResearchSubmission, submission_id)
+    if not row or row.status != "published" or row.publication_type != "research":
+        raise ApplicationError(404, "Published research not found")
+    version = latest_version(db, row)
+    if not version or not version.file_object_name:
+        raise ApplicationError(404, "Published research file not found")
+    url = presigned_file_url(version.file_object_name)
+    if not url:
+        raise ApplicationError(404, "Published research file unavailable")
+    return url
+
+
 def profile_publications(db: Session, user: User) -> list[dict]:
     rows = db.scalars(
         select(ResearchSubmission)

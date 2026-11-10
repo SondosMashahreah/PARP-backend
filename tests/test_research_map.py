@@ -57,17 +57,22 @@ class ResearchMapTests(unittest.TestCase):
         self.assertEqual(result['active_governorates'], 2)
         self.assertEqual(result['max_research_count'], 3)
 
-    def test_directorate_scope_and_permissions(self):
-        self.add_research(gov='g1', directorate='d1')
-        self.add_research(gov='g2', directorate='d2')
+    def test_directorate_sees_national_published_totals_but_not_unpublished(self):
+        self.add_research(gov='g1', directorate='d1', status='published')
+        self.add_research(gov='g2', directorate='d2', status='published')
+        self.add_research(gov='g3', directorate='d2', status='under_review')
+        self.add_research(gov='g3', directorate='d2', kind='practice', status='published')
         self.db.commit()
-        restricted = research_governorates(self.db, self.director)
-        self.assertEqual(restricted['scope'], 'directorate')
-        self.assertEqual(restricted['total_research'], 1)
-        self.assertEqual({r['id']: r['research_count'] for r in restricted['governorates']}, {'g1': 1, 'g2': 0, 'g3': 0})
+        national_published = research_governorates(self.db, self.director)
+        self.assertEqual(national_published['scope'], 'national_published')
+        self.assertEqual(national_published['total_research'], 2)
+        self.assertEqual(national_published['published_research'], 2)
+        self.assertEqual({r['id']: r['research_count'] for r in national_published['governorates']}, {'g1': 1, 'g2': 1, 'g3': 0})
+        # These are public publication counts, independent of the manager's
+        # institutional affiliation. Private / institution details stay scoped.
         self.db.get(UserAffiliation, self.director.id).approval_status = 'requested'
         self.db.commit()
-        self.assertEqual(research_governorates(self.db, self.director)['total_research'], 0)
+        self.assertEqual(research_governorates(self.db, self.director)['total_research'], 2)
         with self.assertRaises(ApplicationError) as error:
             research_governorates(self.db, self.researcher)
         self.assertEqual(error.exception.status_code, 403)
