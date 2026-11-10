@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.routers.dependencies import get_current_user
 from app.services import education as education_service
+from app.services.research_map import research_governorates
 
 router = APIRouter(prefix="/api/education", tags=["Education directory"], dependencies=[Depends(get_current_user)])
 
@@ -39,6 +40,12 @@ def boundaries(db: Session = Depends(education_db)):
 @router.get("/directorates/boundaries")
 def directorate_boundaries(db: Session = Depends(education_db)):
     return education_service.directorate_boundaries(db)
+
+
+@router.get("/research/governorates")
+def research_statistics(db: Session = Depends(education_db), user=Depends(get_current_user)):
+    # Protected like the existing map: no private author or manuscript details.
+    return research_governorates(db, user)
 
 
 @router.get("/schools")
