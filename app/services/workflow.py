@@ -205,6 +205,8 @@ def create_submission(
         raise ApplicationError(413, "Research file must be 25 MB or smaller")
     extension = _research_extension(content_type, file_name)
     form_data = _parse_form_json(form_json)
+    from app.services.researcher_directory import canonicalize_linked_researchers
+    form_data = canonicalize_linked_researchers(db, user, form_data)
     kind = form_data.get('kind', 'research')
     if kind not in ('research', 'practice'): raise ApplicationError(422, 'Invalid submission kind')
     if form_data.get('standard_version') == 'ARDS-1.0':
@@ -293,6 +295,10 @@ def resubmit(
     previous_data = previous.form_data if previous and isinstance(previous.form_data, dict) else {}
     # Partial legacy revisions must not erase ARDS metadata or co-author affiliations.
     form_data = {**previous_data, **incoming_data}
+    if previous_data.get('researchers_mode') == 'linked' and form_data.get('researchers_mode') != 'linked':
+        raise ApplicationError(422, 'Linked author records cannot be downgraded')
+    from app.services.researcher_directory import canonicalize_linked_researchers
+    form_data = canonicalize_linked_researchers(db, user, form_data)
     from app.schemas.researcher import DraftContent
     from app.domain.action_research import validate_standard_submission
     from pydantic import ValidationError

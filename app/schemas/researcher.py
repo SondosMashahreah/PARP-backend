@@ -3,9 +3,14 @@ from pydantic import BaseModel, Field, model_validator
 
 
 class ResearcherEntry(BaseModel):
+    user_id: int | None = Field(default=None, ge=1)
     full_name: str = Field(default='', max_length=300)
-    school: str = Field(default='', max_length=300)
+    school_id: str = Field(default='', max_length=80)
+    school: str = Field(default='', max_length=500)
+    school_en: str = Field(default='', max_length=500)
+    directorate_id: str = Field(default='', max_length=80)
     directorate: str = Field(default='', max_length=300)
+    directorate_en: str = Field(default='', max_length=300)
 
 
 class ActionPlanStep(BaseModel):
@@ -25,6 +30,7 @@ class DraftContent(BaseModel):
     # Existing legacy research and practice fields remain compatible.
     kind: Literal["research", "practice"] = "research"
     standard_version: Literal['ARDS-1.0'] | None = None
+    researchers_mode: Literal['', 'linked'] = ''
     title: str = Field(default='', max_length=500)
     title_en: str = Field(default='', max_length=500)
     research_field: str = Field(default='', max_length=150)

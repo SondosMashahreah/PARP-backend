@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, File, Form, UploadFile
+from fastapi import APIRouter, Depends, File, Form, UploadFile, Query
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.user import User
@@ -7,6 +7,16 @@ from app.schemas.researcher import DraftContent, DraftSave, ProgressSave
 from app.services import researcher, workflow
 
 router = APIRouter(prefix='/api/researcher', tags=['Researcher workspace'])
+
+@router.get('/directory/me')
+def my_researcher_profile(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    from app.services.researcher_directory import own_profile
+    return own_profile(db, user)
+
+@router.get('/directory')
+def researcher_directory(q: str = Query(..., min_length=2, max_length=100), limit: int = Query(15, ge=1, le=20), user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    from app.services.researcher_directory import search_profiles
+    return search_profiles(db, user, q, limit)
 
 @router.get('/me')
 def overview(user: User = Depends(get_current_user), db: Session = Depends(get_db)):

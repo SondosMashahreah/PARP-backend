@@ -18,6 +18,10 @@ def validate_standard_submission(content: dict) -> None:
         for row in researchers
     ):
         raise ApplicationError(422, "Each researcher needs full name, school and directorate")
+    if content.get('researchers_mode') == 'linked':
+        ids = [row.get('user_id') for row in researchers]
+        if any(type(value) is not int or value <= 0 for value in ids) or len(set(ids)) != len(ids):
+            raise ApplicationError(422, 'Select distinct registered platform researchers')
     if not str(content.get("research_question") or "").strip():
         raise ApplicationError(422, "Main research question is required")
     if not any(str(item).strip() for item in (content.get("research_objectives") or [])):
